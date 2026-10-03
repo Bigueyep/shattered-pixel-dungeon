@@ -148,19 +148,21 @@ public class CrackedMirror extends Artifact {
 				}
 				break;
 
-			case AC_DOUBLE:
-				if (spendCracks(hero, cracks, doubleCost())) {
-					if (MirrorDouble.spawn(hero, MirrorDouble.baseDuration(hero)) == null) {
-						//refund if there was no room
-						cracks.add(doubleCost());
-						GLog.w(Messages.get(this, "no_space"));
-					} else {
-						Sample.INSTANCE.play(Assets.Sounds.READ);
-						hero.sprite.operate(hero.pos);
-						hero.spendAndNext(1f);
-					}
+			case AC_DOUBLE: {
+				int cost = doubleCost();
+				if (cracks.count() < cost) {
+					GLog.w(Messages.get(this, "not_enough", cost));
+				} else if (MirrorDouble.spawn(hero, MirrorDouble.baseDuration(hero)) == null) {
+					//nothing is spent (cracks or exp) if there is no room for the double
+					GLog.w(Messages.get(this, "no_space"));
+				} else {
+					spendCracks(hero, cracks, cost);
+					Sample.INSTANCE.play(Assets.Sounds.READ);
+					hero.sprite.operate(hero.pos);
+					hero.spendAndNext(1f);
 				}
 				break;
+			}
 
 			case AC_SWAP:
 				MirrorDouble twin = MirrorDouble.active();

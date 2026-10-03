@@ -52,13 +52,13 @@ L'arbre suit la structure de Shattered Pixel Dungeon : paliers 1 à 4 de talents
 | **Verre Trempé** | Manger : +1 Fêlure, +2 PV | +2 Fêlures, +3 PV | Inutile si la jauge est pleine : à garder pour l'après-combat |
 | **Éclat Révélateur** | Ramasser une arme/armure révèle si elle est maudite | + anneaux et baguettes | Aucun gain en combat |
 | **Pas Silencieux** | Repérée comme si elle était 1 case plus loin | 2 cases | Les ennemis déjà en chasse ne sont pas concernés |
-| **Miroir Protecteur** | 1ʳᵉ attaque ennemie de chaque étage −30 % | −50 % | Un seul usage par étage : une attaque faible le « consomme » |
+| **Miroir Protecteur** | 1ʳᵉ attaque ennemie qui blesse, à chaque étage : −30 % | −50 % | Un seul usage par étage (même en y revenant) : une attaque faible le « consomme » |
 
 ### Palier 2 — « La Fêlure » (2 rangs par talent)
 
 | Talent | Rang 1 | Rang 2 | Contre-stratégie |
 |---|---|---|---|
-| **Breuvage de Tain** | Boire une potion : +1 Fêlure | +2 Fêlures | Coûte des potions |
+| **Breuvage de Tain** | Boire ou lancer une potion : +1 Fêlure | +2 Fêlures | Coûte des potions |
 | **Riposte Spéculaire** | Après une esquive, prochaine attaque de mêlée (5 tours) +20 % | +35 % | Les ennemis à distance ne se font pas punir au contact |
 | **Absorption** | Sans ennemi en vue : 1 Fêlure → 1 PV tous les 3 tours | → 2 PV | Impossible en combat |
 | **Image Rémanente** | Touchée sous 50 % PV : 15 % de chances de laisser une image miroir (1 fois / 30 tours) | 30 % | Les images meurent au premier coup |
@@ -111,6 +111,7 @@ Débloqué via la Couronne du Roi Nain. Coût : 35 de charge d'armure (réductib
 | **Miroir Fêlé** | Artéfact de départ (niveau max. +10, progresse en dépensant des Fêlures) | **Renvoyer** (3 Fêlures, −1 tous les 3 niveaux) : la prochaine attaque à distance est renvoyée à son auteur. **Briser** (8 Fêlures, sous 25 % PV) : Miroir Brisé volontaire. **Double** / **Échanger** pour l'Ombre Jumelle | Doit être équipé ; inutile contre la mêlée et les effets de zone |
 | **Poussière de Tain** | Consommable à lancer (3 au départ) | Nuage de fumée 3×3 et Cécité 5 tours sur les ennemis touchés | Le nuage bloque aussi la vision des alliés |
 | **Linceul argenté** | Armure de classe | Donne accès à la capacité d'armure | — |
+| **Éclat de miroir** | Restes laissés par une Ombre-Miroir morte (partie suivante) | Le briser invoque 2 images miroir | Usage unique |
 
 ---
 
@@ -153,7 +154,7 @@ Badge : **« Ombre-Miroir débloquée ! »**. Dans les versions *debug* (comme l
 | Bonus | Valeur | Malus | Valeur |
 |---|---|---|---|
 | Dégâts infligés | **+40 %** | Esquive | **−50 %** |
-| Vitesse d'attaque | **+33 %** (délai × 0,75) | Soins reçus (potions, régénération de potion) | **−50 %** |
+| Vitesse d'attaque | **+33 %** (délai × 0,75) | Soins des potions | **−50 %** |
 | Vol de vie | 15 % des dégâts infligés | Parchemins et baguettes | **Interdits** |
 | Renvoi | 20 % des dégâts de mêlée reçus | À la fin | **Affaibli 10 tours** + Faim +50 |
 
@@ -182,6 +183,8 @@ Aucune invincibilité : le héros peut mourir pendant le mode.
 | Risque identifié | Mesure prise |
 |---|---|
 | Boucle Fêlures → Double → Fêlures | Le Double et les images ne génèrent pas de Fêlures |
+| Renvoi « gratuit » à l'infini avec le Miroir Fêlé | Une attaque absorbée par un reflet ne rapporte pas de Fêlure |
+| Montée de niveau gratuite du Miroir Fêlé | Un Double qui ne peut pas apparaître ne coûte rien et ne rapporte pas d'expérience |
 | Miroir Brisé déclenché en boucle | Recharge de 150 tours + 5 Fêlures minimum + Affaibli |
 | Inversion = soin complet gratuit | Coût d'armure de 35, portée 3, ni boss ni mini-boss (sauf talent, partiel) |
 | Le Dernier Éclat = Ankh gratuit | Une seule fois, uniquement avec l'Amulette (fin de partie) |

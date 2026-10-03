@@ -25,12 +25,12 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
-import com.watabou.utils.Bundle;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
@@ -42,8 +42,6 @@ public class MirrorDouble extends MirrorImage {
 	{
 		defenseSkill = 1;
 	}
-
-	private int turnsLeft = 15;
 
 	public static MirrorDouble active(){
 		for (Char ch : Actor.chars()){
@@ -74,23 +72,15 @@ public class MirrorDouble extends MirrorImage {
 		twin.duplicate(hero);
 		Buff.detach(twin, MirrorInvis.class);
 		twin.HP = twin.HT = Math.max(1, Math.round(hero.HT * (0.3f + 0.1f*hero.pointsInTalent(Talent.TWIN_RESILIENCE))));
-		twin.turnsLeft = duration;
 		GameScene.add(twin);
+		//lifetime is tracked in game time, so fast attacks don't make the double expire sooner
+		Buff.affect(twin, Lifetime.class, duration);
 		ScrollOfTeleportation.appear(twin, Random.element(cells));
 		return twin;
 	}
 
 	public static int baseDuration( Hero hero ){
 		return 15 + 5*hero.pointsInTalent(Talent.TWIN_RESILIENCE);
-	}
-
-	@Override
-	protected boolean act() {
-		if (--turnsLeft < 0){
-			die(null);
-			return true;
-		}
-		return super.act();
 	}
 
 	@Override
@@ -114,20 +104,18 @@ public class MirrorDouble extends MirrorImage {
 
 	@Override
 	public String description() {
-		return Messages.get(this, "desc", turnsLeft);
+		Lifetime lifetime = buff(Lifetime.class);
+		return Messages.get(this, "desc", lifetime != null ? (int)Math.ceil(lifetime.visualcooldown()) : 0);
 	}
 
-	private static final String TURNS_LEFT = "turns_left";
+	public static class Lifetime extends FlavourBuff {
 
-	@Override
-	public void storeInBundle(Bundle bundle) {
-		super.storeInBundle(bundle);
-		bundle.put(TURNS_LEFT, turnsLeft);
-	}
-
-	@Override
-	public void restoreFromBundle(Bundle bundle) {
-		super.restoreFromBundle(bundle);
-		turnsLeft = bundle.getInt(TURNS_LEFT);
+		@Override
+		public void detach() {
+			super.detach();
+			if (target != null && target.isAlive()){
+				target.die(null);
+			}
+		}
 	}
 }

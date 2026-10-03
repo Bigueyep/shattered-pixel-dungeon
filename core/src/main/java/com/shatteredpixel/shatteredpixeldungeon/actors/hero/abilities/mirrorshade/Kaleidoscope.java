@@ -79,6 +79,7 @@ public class Kaleidoscope extends ArmorAbility {
 
 		//called when the hero's evasion is tested, returns true if a reflection is struck instead
 		public boolean deflect( Char attacker ){
+			pending = null;
 			if (attacker == null || facets <= 0) return false;
 			//each attack only has a 1/(facets+1) chance to find the real hero
 			if (Random.Int(facets + 1) != 0){

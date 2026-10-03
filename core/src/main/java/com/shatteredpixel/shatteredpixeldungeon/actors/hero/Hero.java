@@ -595,14 +595,19 @@ public class Hero extends Char {
 		}
 
 		//mirror shade reflections: a facet or the cracked mirror can take the hit instead
-		Kaleidoscope.Facets facets = buff(Kaleidoscope.Facets.class);
-		if (facets != null && facets.deflect(enemy)){
-			return INFINITE_EVASION;
-		}
-		CrackedMirror.Reflect reflect = buff(CrackedMirror.Reflect.class);
-		if (reflect != null && enemy != null && !Dungeon.level.adjacent(pos, enemy.pos)){
-			reflect.arm(enemy);
-			return INFINITE_EVASION;
+		//only rolled for real attacks, and any state left by an earlier attack is cleared first
+		if (Char.rollingDefense) {
+			Kaleidoscope.Facets facets = buff(Kaleidoscope.Facets.class);
+			CrackedMirror.Reflect reflect = buff(CrackedMirror.Reflect.class);
+			if (facets != null) facets.clearPending();
+			if (reflect != null) reflect.disarm();
+			if (facets != null && facets.deflect(enemy)) {
+				return INFINITE_EVASION;
+			}
+			if (reflect != null && enemy != null && !Dungeon.level.adjacent(pos, enemy.pos)) {
+				reflect.arm(enemy);
+				return INFINITE_EVASION;
+			}
 		}
 		
 		float evasion = defenseSkill;
@@ -677,12 +682,12 @@ public class Hero extends Char {
 	@Override
 	public String defenseVerb() {
 		Statistics.dodges++;
-		MirrorCracks cracks = buff(MirrorCracks.class);
-		if (cracks != null) cracks.onDodge();
 		if (hasTalent(Talent.SPECULAR_RIPOSTE)){
 			Buff.prolong(this, Talent.SpecularRiposteTracker.class, 5f);
 		}
 
+		//attacks taken by a reflection don't count as dodges for crack gain,
+		// otherwise reflecting at mirror level 6+ would cost nothing
 		Kaleidoscope.Facets facets = buff(Kaleidoscope.Facets.class);
 		if (facets != null && facets.isPending()){
 			return facets.shatter(this);
@@ -691,6 +696,9 @@ public class Hero extends Char {
 		if (reflect != null && reflect.isArmed()){
 			return reflect.reflect(this);
 		}
+
+		MirrorCracks cracks = buff(MirrorCracks.class);
+		if (cracks != null) cracks.onDodge();
 
 		Combo.ParryTracker parry = buff(Combo.ParryTracker.class);
 		if (parry != null){
@@ -1695,8 +1703,6 @@ public class Hero extends Char {
 		if (facets != null) facets.clearPending();
 		CrackedMirror.Reflect reflect = buff(CrackedMirror.Reflect.class);
 		if (reflect != null) reflect.disarm();
-
-		MirrorCracks.onMeleeHitTaken(this, enemy, damage);
 		
 		if (belongings.armor() != null) {
 			damage = belongings.armor().proc( enemy, this, damage );
@@ -1787,11 +1793,8 @@ public class Hero extends Char {
 		}
 
 		//first enemy hit on each floor is reduced by 30%/50%
-		if (src instanceof Char && hasTalent(Talent.PROTECTIVE_MIRROR)){
-			Talent.ProtectiveMirrorTracker tracker = Buff.affect(this, Talent.ProtectiveMirrorTracker.class);
-			if (tracker.depth != Dungeon.depth || tracker.branch != Dungeon.branch){
-				tracker.depth = Dungeon.depth;
-				tracker.branch = Dungeon.branch;
+		if (src instanceof Char && damage > 0 && hasTalent(Talent.PROTECTIVE_MIRROR)){
+			if (Buff.affect(this, Talent.ProtectiveMirrorTracker.class).useOnCurrentFloor()){
 				damage *= 0.9f - 0.2f*pointsInTalent(Talent.PROTECTIVE_MIRROR);
 			}
 		}
@@ -1810,6 +1813,10 @@ public class Hero extends Char {
 
 		if (effectiveDamage <= 0) return;
 
+		if (src instanceof Char){
+			//reflects a portion of melee damage actually taken (after armor and shielding)
+			MirrorCracks.onMeleeHitTaken(this, (Char) src, effectiveDamage);
+		}
 		if (src instanceof Char && heroClass == HeroClass.MIRRORSHADE){
 			MirrorCracks.gain(this, crushingBlow ? 2 : 1);
 		}

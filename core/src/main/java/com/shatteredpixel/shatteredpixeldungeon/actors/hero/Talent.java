@@ -980,21 +980,27 @@ public enum Talent {
 	}
 	public static class ProtectiveMirrorTracker extends Buff{
 		{ revivePersists = true; }
-		public int depth = -1;
-		public int branch = -1;
-		private static final String DEPTH = "depth";
-		private static final String BRANCH = "branch";
+		//floors (depth*100 + branch) on which the protective mirror has already been used
+		private final HashSet<Integer> usedFloors = new HashSet<>();
+		public boolean useOnCurrentFloor(){
+			return usedFloors.add(Dungeon.depth*100 + Dungeon.branch);
+		}
+		private static final String USED_FLOORS = "used_floors";
 		@Override
 		public void storeInBundle(Bundle bundle) {
 			super.storeInBundle(bundle);
-			bundle.put(DEPTH, depth);
-			bundle.put(BRANCH, branch);
+			int[] floors = new int[usedFloors.size()];
+			int i = 0;
+			for (int floor : usedFloors) floors[i++] = floor;
+			bundle.put(USED_FLOORS, floors);
 		}
 		@Override
 		public void restoreFromBundle(Bundle bundle) {
 			super.restoreFromBundle(bundle);
-			depth = bundle.getInt(DEPTH);
-			branch = bundle.getInt(BRANCH);
+			usedFloors.clear();
+			if (bundle.contains(USED_FLOORS)) {
+				for (int floor : bundle.getIntArray(USED_FLOORS)) usedFloors.add(floor);
+			}
 		}
 	}
 	public static class AfterimageCooldown extends FlavourBuff{
