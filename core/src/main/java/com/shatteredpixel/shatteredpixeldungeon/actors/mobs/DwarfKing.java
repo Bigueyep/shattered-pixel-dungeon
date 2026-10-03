@@ -566,6 +566,7 @@ public class DwarfKing extends Mob {
 		}
 
 		Badges.validateBossSlain();
+		Badges.validateMirrorShadeUnlock();
 		if (Statistics.qualifiedForBossChallengeBadge){
 			Badges.validateBossChallengeCompleted();
 		}

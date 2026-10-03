@@ -232,6 +232,11 @@ public class ScrollOfMetamorphosis extends ExoticScroll {
 				}
 			}
 
+			//the options window only fits 6 talents, trim extras now that there are 7 hero classes
+			while (options.size() > 6){
+				options.remove(Random.element(new ArrayList<>(options.keySet())));
+			}
+
 			replaceOptions = options;
 			setup(replacing, tier, options);
 		}

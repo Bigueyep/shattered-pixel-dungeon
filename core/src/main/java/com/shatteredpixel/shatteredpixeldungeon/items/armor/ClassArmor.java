@@ -118,6 +118,9 @@ abstract public class ClassArmor extends Armor {
 			case CLERIC:
 				classArmor = new ClericArmor();
 				break;
+			case MIRRORSHADE:
+				classArmor = new MirrorShadeArmor();
+				break;
 		}
 		
 		classArmor.level(armor.trueLevel());

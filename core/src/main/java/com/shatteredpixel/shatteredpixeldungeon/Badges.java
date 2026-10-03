@@ -71,6 +71,7 @@ public class Badges {
 		MASTERY_HUNTRESS,
 		MASTERY_DUELIST,
 		MASTERY_CLERIC,
+		MASTERY_MIRRORSHADE,
 		FOUND_RATMOGRIFY,
 
 		//bronze
@@ -79,6 +80,7 @@ public class Badges {
 		UNLOCK_HUNTRESS             ( 3 ),
 		UNLOCK_DUELIST              ( 4 ),
 		UNLOCK_CLERIC               ( 5 ),
+		UNLOCK_MIRRORSHADE          ( 25 ),
 		MONSTERS_SLAIN_1            ( 6 ),
 		MONSTERS_SLAIN_2            ( 7 ),
 		GOLD_COLLECTED_1            ( 8 ),
@@ -955,6 +957,9 @@ public class Badges {
 			case CLERIC:
 				badge = Badge.MASTERY_CLERIC;
 				break;
+			case MIRRORSHADE:
+				badge = Badge.MASTERY_MIRRORSHADE;
+				break;
 		}
 		
 		unlock(badge);
@@ -996,6 +1001,13 @@ public class Badges {
 					((MeleeWeapon) Dungeon.hero.belongings.weapon).STRReq(0) <= Dungeon.hero.STR()){
 				displayBadge(Badge.UNLOCK_DUELIST);
 			}
+		}
+	}
+
+	//unlocked by defeating the dwarf king after dodging at least 50 attacks in the same run
+	public static void validateMirrorShadeUnlock(){
+		if (!isUnlocked(Badge.UNLOCK_MIRRORSHADE) && Statistics.dodges >= 50){
+			displayBadge( Badge.UNLOCK_MIRRORSHADE );
 		}
 	}
 

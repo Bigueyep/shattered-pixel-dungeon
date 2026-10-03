@@ -659,6 +659,19 @@ public class GameScene extends PixelScene {
 				GLog.h(Messages.get(this, "return"), Dungeon.depth);
 			}
 
+			//glass memory: reveals the layout around the arrival point on new floors
+			if (Dungeon.hero.hasTalent(Talent.GLASS_MEMORY)
+					&& Dungeon.depth == Statistics.deepestFloor
+					&& (InterlevelScene.mode == InterlevelScene.Mode.DESCEND || InterlevelScene.mode == InterlevelScene.Mode.FALL)){
+				int radius = 2 + 3*Dungeon.hero.pointsInTalent(Talent.GLASS_MEMORY);
+				for (int i = 0; i < Dungeon.level.length(); i++){
+					if (Dungeon.level.discoverable[i] && Dungeon.level.distance(i, Dungeon.hero.pos) <= radius){
+						Dungeon.level.mapped[i] = true;
+					}
+				}
+				GameScene.updateFog();
+			}
+
 			if (Dungeon.hero.hasTalent(Talent.ROGUES_FORESIGHT)
 					&& Dungeon.level instanceof RegularLevel && Dungeon.branch == 0){
 				int reqSecrets = Dungeon.level.feeling == Level.Feeling.SECRETS ? 2 : 1;

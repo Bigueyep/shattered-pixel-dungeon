@@ -60,6 +60,7 @@ public class Statistics {
 	public static int upgradesUsed;
 	public static int sneakAttacks;
 	public static int thrownAttacks;
+	public static int dodges;
 
 	public static int spawnersAlive;
 	
@@ -106,6 +107,7 @@ public class Statistics {
 		upgradesUsed    = 0;
 		sneakAttacks    = 0;
 		thrownAttacks   = 0;
+		dodges          = 0;
 
 		spawnersAlive   = 0;
 		
@@ -150,6 +152,7 @@ public class Statistics {
 	private static final String UPGRADES	= "upgradesUsed";
 	private static final String SNEAKS		= "sneakAttacks";
 	private static final String THROWN		= "thrownAssists";
+	private static final String DODGES		= "dodges";
 
 	private static final String ITEM_TYPES_DISCOVERED    = "item_types_discovered";
 
@@ -198,6 +201,7 @@ public class Statistics {
 		bundle.put( UPGRADES,   upgradesUsed );
 		bundle.put( SNEAKS,		sneakAttacks );
 		bundle.put( THROWN,     thrownAttacks);
+		bundle.put( DODGES,     dodges);
 
 		bundle.put( SPAWNERS,	spawnersAlive );
 		
@@ -253,6 +257,7 @@ public class Statistics {
 		upgradesUsed    = bundle.getInt( UPGRADES );
 		sneakAttacks    = bundle.getInt( SNEAKS );
 		thrownAttacks   = bundle.getInt( THROWN );
+		dodges          = bundle.getInt( DODGES );
 
 		spawnersAlive   = bundle.getInt( SPAWNERS );
 		
