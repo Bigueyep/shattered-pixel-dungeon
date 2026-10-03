@@ -19,6 +19,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      # needed to publish the APK as a GitHub release after a merge
+      contents: write
     env:
       # Secrets can't be read in step `if:` conditions, so expose this one at job level
       KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -51,6 +54,29 @@ jobs:
           name: shattered-pixel-dungeon-debug-${{ github.sha }}
           path: android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # every push to the default branch (i.e. every merged PR) publishes the APK as a release,
+      # downloadable without logging in from the repository's Releases page
+      - name: Publish APK release
+        if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          APK=$(ls android/build/outputs/apk/debug/*.apk | head -n 1)
+          NAME="shattered-pixel-dungeon-${GITHUB_SHA::7}-debug.apk"
+          TAG="build-${{ github.run_number }}"
+          cp "$APK" "$RUNNER_TEMP/$NAME"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # re-run of the same workflow run: replace the asset instead of failing on the existing tag
+            gh release upload "$TAG" "$RUNNER_TEMP/$NAME" --clobber
+          else
+            gh release create "$TAG" "$RUNNER_TEMP/$NAME" \
+              --target "$GITHUB_SHA" \
+              --title "Build ${{ github.run_number }} (${GITHUB_SHA::7})" \
+              --notes "Debug APK built automatically from ${GITHUB_SHA::7} on ${{ github.ref_name }}. Debug builds unlock every hero and install alongside the official app." \
+              --latest
+          fi
 
       - name: Build release APK
         if: github.event_name == 'workflow_dispatch' && inputs.build_release
