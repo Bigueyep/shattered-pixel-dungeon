@@ -28,6 +28,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BrokenMirror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
@@ -118,6 +119,11 @@ public abstract class Wand extends Item {
 		super.execute( hero, action );
 
 		if (action.equals( AC_ZAP )) {
+
+			if (hero.buff(BrokenMirror.class) != null){
+				GLog.w( Messages.get(BrokenMirror.class, "no_wands") );
+				return;
+			}
 			
 			curUser = hero;
 			curItem = this;

@@ -24,6 +24,7 @@ package com.shatteredpixel.shatteredpixeldungeon.items.artifacts;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BrokenMirror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Regeneration;
@@ -125,6 +126,7 @@ public class UnstableSpellbook extends Artifact {
 		if (action.equals( AC_READ )) {
 
 			if (hero.buff( Blindness.class ) != null) GLog.w( Messages.get(this, "blinded") );
+			else if (hero.buff( BrokenMirror.class ) != null) GLog.w( Messages.get(BrokenMirror.class, "no_scrolls") );
 			else if (!isEquipped( hero ))             GLog.i( Messages.get(Artifact.class, "need_to_equip") );
 			else if (charge <= 0)                     GLog.i( Messages.get(this, "no_charge") );
 			else if (cursed)                          GLog.i( Messages.get(this, "cursed") );

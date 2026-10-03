@@ -39,6 +39,19 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Awareness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Berserk;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BrokenMirror;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Dread;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MirrorCracks;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Electricity;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Brute;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DM100;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Golem;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CrackedMirror;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMirrorImage;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLightning;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Shocking;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Bless;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Charm;
@@ -65,6 +78,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.TimeStasis;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vertigo;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.ArmorAbility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.AscendedForm;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mirrorshade.Kaleidoscope;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.Challenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.ElementalStrike;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.NaturesPower;
@@ -261,6 +275,8 @@ public class Hero extends Char {
 		int curHT = HT;
 		
 		HT = 20 + 5*(lvl-1) + HTBoost;
+		//the mirror shade is more fragile than other heroes
+		if (heroClass == HeroClass.MIRRORSHADE) HT -= 2;
 		float multiplier = RingOfMight.HTMultiplier(this);
 		HT = Math.round(multiplier * HT);
 		
@@ -577,10 +593,33 @@ public class Hero extends Char {
 		if (buff(RoundShield.GuardTracker.class) != null){
 			return INFINITE_EVASION;
 		}
+
+		//mirror shade reflections: a facet or the cracked mirror can take the hit instead
+		//only rolled for real attacks, and any state left by an earlier attack is cleared first
+		if (Char.rollingDefense) {
+			Kaleidoscope.Facets facets = buff(Kaleidoscope.Facets.class);
+			CrackedMirror.Reflect reflect = buff(CrackedMirror.Reflect.class);
+			if (facets != null) facets.clearPending();
+			if (reflect != null) reflect.disarm();
+			if (facets != null && facets.deflect(enemy)) {
+				return INFINITE_EVASION;
+			}
+			if (reflect != null && enemy != null && !Dungeon.level.adjacent(pos, enemy.pos)) {
+				reflect.arm(enemy);
+				return INFINITE_EVASION;
+			}
+		}
 		
 		float evasion = defenseSkill;
 		
 		evasion *= RingOfEvasion.evasionMultiplier( this );
+
+		if (heroClass == HeroClass.MIRRORSHADE){
+			evasion *= 1.1f;
+		}
+		if (buff(BrokenMirror.class) != null){
+			evasion *= BrokenMirror.EVASION_MULTI;
+		}
 
 		if (buff(Talent.LiquidAgilEVATracker.class) != null){
 			if (pointsInTalent(Talent.LIQUID_AGILITY) == 1){
@@ -611,7 +650,56 @@ public class Hero extends Char {
 	}
 
 	@Override
+	public float stealth() {
+		return super.stealth() + pointsInTalent(Talent.MUTED_STEPS);
+	}
+
+	@Override
+	public float resist(Class effect) {
+		float result = super.resist(effect);
+		if (heroClass == HeroClass.MIRRORSHADE && effect != null){
+			//a mirror that can't see reflects nothing
+			if (Blindness.class.isAssignableFrom(effect)){
+				result *= 2f;
+			}
+			//glass conducts lightning
+			if (Electricity.class.isAssignableFrom(effect)
+					|| DM100.LightningBolt.class.isAssignableFrom(effect)
+					|| WandOfLightning.class.isAssignableFrom(effect)
+					|| Shocking.class.isAssignableFrom(effect)){
+				result *= 1.25f;
+			}
+			//reflections don't feel fear or affection
+			if (Charm.class.isAssignableFrom(effect)
+					|| Terror.class.isAssignableFrom(effect)
+					|| Dread.class.isAssignableFrom(effect)){
+				result *= 0.5f;
+			}
+		}
+		return result;
+	}
+
+	@Override
 	public String defenseVerb() {
+		Statistics.dodges++;
+		if (hasTalent(Talent.SPECULAR_RIPOSTE)){
+			Buff.prolong(this, Talent.SpecularRiposteTracker.class, 5f);
+		}
+
+		//attacks taken by a reflection don't count as dodges for crack gain,
+		// otherwise reflecting at mirror level 6+ would cost nothing
+		Kaleidoscope.Facets facets = buff(Kaleidoscope.Facets.class);
+		if (facets != null && facets.isPending()){
+			return facets.shatter(this);
+		}
+		CrackedMirror.Reflect reflect = buff(CrackedMirror.Reflect.class);
+		if (reflect != null && reflect.isArmed()){
+			return reflect.reflect(this);
+		}
+
+		MirrorCracks cracks = buff(MirrorCracks.class);
+		if (cracks != null) cracks.onDodge();
+
 		Combo.ParryTracker parry = buff(Combo.ParryTracker.class);
 		if (parry != null){
 			parry.parried = true;
@@ -660,6 +748,13 @@ public class Hero extends Char {
 
 		if (buff(HoldFast.class) != null){
 			dr += buff(HoldFast.class).armorBonus();
+		}
+
+		//+1 armor per 3/2/2 cracks, +1 at 3 points
+		if (hasTalent(Talent.ONE_WAY_GLASS)){
+			int points = pointsInTalent(Talent.ONE_WAY_GLASS);
+			dr += MirrorCracks.count(this) / (points == 1 ? 3 : 2);
+			if (points >= 3) dr += 1;
 		}
 		
 		return dr;
@@ -780,6 +875,14 @@ public class Hero extends Char {
 	}
 	
 	public float attackDelay() {
+		float delay = baseAttackDelay();
+		if (buff(BrokenMirror.class) != null){
+			delay *= BrokenMirror.ATTACK_DELAY;
+		}
+		return delay;
+	}
+
+	private float baseAttackDelay() {
 		if (buff(Talent.LethalMomentumTracker.class) != null){
 			buff(Talent.LethalMomentumTracker.class).detach();
 			return 0;
@@ -1533,6 +1636,11 @@ public class Hero extends Char {
 
 		damage = Talent.onAttackProc( this, enemy, damage );
 
+		if (buff(BrokenMirror.class) != null){
+			damage = Math.round(damage * BrokenMirror.DMG_BOOST);
+			BrokenMirror.lifesteal(this, damage);
+		}
+
 		if (wep != null) {
 			damage = wep.proc( this, enemy, damage );
 		} else {
@@ -1589,6 +1697,12 @@ public class Hero extends Char {
 			Berserk berserk = Buff.affect(this, Berserk.class);
 			berserk.damage(damage);
 		}
+
+		//the attack landed, so any pending reflection is cancelled
+		Kaleidoscope.Facets facets = buff(Kaleidoscope.Facets.class);
+		if (facets != null) facets.clearPending();
+		CrackedMirror.Reflect reflect = buff(CrackedMirror.Reflect.class);
+		if (reflect != null) reflect.disarm();
 		
 		if (belongings.armor() != null) {
 			damage = belongings.armor().proc( enemy, this, damage );
@@ -1672,6 +1786,19 @@ public class Hero extends Char {
 			else if (pointsInTalent(Talent.IRON_STOMACH) == 2)  damage = 0;
 		}
 
+		//glass shatters under crushing blows
+		boolean crushingBlow = heroClass == HeroClass.MIRRORSHADE && (src instanceof Golem || src instanceof Brute);
+		if (crushingBlow){
+			damage *= 1.1f;
+		}
+
+		//first enemy hit on each floor is reduced by 30%/50%
+		if (src instanceof Char && damage > 0 && hasTalent(Talent.PROTECTIVE_MIRROR)){
+			if (Buff.affect(this, Talent.ProtectiveMirrorTracker.class).useOnCurrentFloor()){
+				damage *= 0.9f - 0.2f*pointsInTalent(Talent.PROTECTIVE_MIRROR);
+			}
+		}
+
 		dmg = Math.round(damage);
 
 		//we ceil this one to avoid letting the player easily take 0 dmg from tenacity early
@@ -1685,6 +1812,26 @@ public class Hero extends Char {
 		int effectiveDamage = preHP - postHP;
 
 		if (effectiveDamage <= 0) return;
+
+		if (src instanceof Char){
+			//reflects a portion of melee damage actually taken (after armor and shielding)
+			MirrorCracks.onMeleeHitTaken(this, (Char) src, effectiveDamage);
+		}
+		if (src instanceof Char && heroClass == HeroClass.MIRRORSHADE){
+			MirrorCracks.gain(this, crushingBlow ? 2 : 1);
+		}
+		if (src instanceof Char && isAlive() && HP < HT/2
+				&& hasTalent(Talent.AFTERIMAGE) && buff(Talent.AfterimageCooldown.class) == null
+				&& Random.Int(20) < 3*pointsInTalent(Talent.AFTERIMAGE)){
+			//15%/30% chance to leave an afterimage behind
+			if (ScrollOfMirrorImage.spawnImages(this, 1) > 0){
+				Buff.affect(this, Talent.AfterimageCooldown.class, 30f);
+			}
+		}
+		MirrorCracks cracks = buff(MirrorCracks.class);
+		if (cracks != null){
+			cracks.checkShatter(this);
+		}
 
 		if (buff(Challenge.DuelParticipant.class) != null){
 			buff(Challenge.DuelParticipant.class).addDamage(effectiveDamage);
@@ -2171,6 +2318,13 @@ public class Hero extends Char {
 	public void die( Object cause ) {
 		
 		curAction = null;
+
+		//the mirror shade's last shard takes priority over ankhs
+		MirrorCracks cracks = buff(MirrorCracks.class);
+		if (cracks != null && cracks.tryLastShard(this)){
+			interrupt();
+			return;
+		}
 
 		Ankh ankh = null;
 

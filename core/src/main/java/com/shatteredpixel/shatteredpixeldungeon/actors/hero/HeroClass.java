@@ -27,6 +27,8 @@ import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.QuickSlot;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MirrorCracks;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.ArmorAbility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.AscendedForm;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.PowerOfMany;
@@ -38,6 +40,9 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.N
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.SpectralBlades;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.SpiritHawk;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.ElementalBlast;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mirrorshade.GlassPrison;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mirrorshade.Inversion;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mirrorshade.Kaleidoscope;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WarpBeacon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WildMagic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.rogue.DeathMark;
@@ -48,9 +53,11 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.He
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.Shockwave;
 import com.shatteredpixel.shatteredpixeldungeon.items.BrokenSeal;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.TainDust;
 import com.shatteredpixel.shatteredpixeldungeon.items.Waterskin;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClothArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CrackedMirror;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.HolyTome;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.VelvetPouch;
 import com.shatteredpixel.shatteredpixeldungeon.items.food.Food;
@@ -73,6 +80,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Cudgel;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Dagger;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Gloves;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.ObsidianShard;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Rapier;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.WornShortsword;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingKnife;
@@ -89,7 +97,8 @@ public enum HeroClass {
 	ROGUE( HeroSubClass.ASSASSIN, HeroSubClass.FREERUNNER ),
 	HUNTRESS( HeroSubClass.SNIPER, HeroSubClass.WARDEN ),
 	DUELIST( HeroSubClass.CHAMPION, HeroSubClass.MONK ),
-	CLERIC( HeroSubClass.PRIEST, HeroSubClass.PALADIN );
+	CLERIC( HeroSubClass.PRIEST, HeroSubClass.PALADIN ),
+	MIRRORSHADE( HeroSubClass.REFLECTOR, HeroSubClass.TWIN );
 
 	private HeroSubClass[] subClasses;
 
@@ -140,6 +149,10 @@ public enum HeroClass {
 			case CLERIC:
 				initCleric( hero );
 				break;
+
+			case MIRRORSHADE:
+				initMirrorShade( hero );
+				break;
 		}
 
 		if (SPDSettings.quickslotWaterskin()) {
@@ -167,6 +180,8 @@ public enum HeroClass {
 				return Badges.Badge.MASTERY_DUELIST;
 			case CLERIC:
 				return Badges.Badge.MASTERY_CLERIC;
+			case MIRRORSHADE:
+				return Badges.Badge.MASTERY_MIRRORSHADE;
 		}
 		return null;
 	}
@@ -260,6 +275,29 @@ public enum HeroClass {
 		new ScrollOfRemoveCurse().identify();
 	}
 
+	private static void initMirrorShade( Hero hero ) {
+
+		(hero.belongings.weapon = new ObsidianShard()).identify();
+
+		CrackedMirror mirror = new CrackedMirror();
+		(hero.belongings.artifact = mirror).identify();
+		hero.belongings.artifact.activate( hero );
+
+		TainDust dust = new TainDust();
+		dust.quantity(3).identify().collect();
+
+		Dungeon.quickslot.setSlot(0, mirror);
+		Dungeon.quickslot.setSlot(1, dust);
+
+		//the mirror shade is more fragile than other heroes, see Hero.updateHT
+		hero.updateHT(false);
+		hero.HP = hero.HT;
+		Buff.affect(hero, MirrorCracks.class);
+
+		new PotionOfInvisibility().identify();
+		new ScrollOfMirrorImage().identify();
+	}
+
 	public String title() {
 		return Messages.get(HeroClass.class, name());
 	}
@@ -290,6 +328,8 @@ public enum HeroClass {
 				return new ArmorAbility[]{new Challenge(), new ElementalStrike(), new Feint()};
 			case CLERIC:
 				return new ArmorAbility[]{new AscendedForm(), new Trinity(), new PowerOfMany()};
+			case MIRRORSHADE:
+				return new ArmorAbility[]{new Kaleidoscope(), new Inversion(), new GlassPrison()};
 		}
 	}
 
@@ -307,6 +347,8 @@ public enum HeroClass {
 				return Assets.Sprites.DUELIST;
 			case CLERIC:
 				return Assets.Sprites.CLERIC;
+			case MIRRORSHADE:
+				return Assets.Sprites.MIRRORSHADE;
 		}
 	}
 
@@ -324,6 +366,8 @@ public enum HeroClass {
 				return Assets.Splashes.DUELIST;
 			case CLERIC:
 				return Assets.Splashes.CLERIC;
+			case MIRRORSHADE:
+				return Assets.Splashes.MIRRORSHADE;
 		}
 	}
 	
@@ -344,6 +388,8 @@ public enum HeroClass {
 				return Badges.isUnlocked(Badges.Badge.UNLOCK_DUELIST);
 			case CLERIC:
 				return Badges.isUnlocked(Badges.Badge.UNLOCK_CLERIC);
+			case MIRRORSHADE:
+				return Badges.isUnlocked(Badges.Badge.UNLOCK_MIRRORSHADE);
 		}
 	}
 	

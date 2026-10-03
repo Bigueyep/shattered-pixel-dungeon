@@ -255,14 +255,15 @@ public class HeroSelectScene extends PixelScene {
 			title.setPos(insets.left + (leftArea - title.width())/2f, (h-uiHeight)/2f);
 			align(title);
 
-			int btnWidth = HeroBtn.MIN_WIDTH + 15;
 			int btnHeight = HeroBtn.HEIGHT;
 			if (uiHeight >= 180){
 				btnHeight += 6;
 			}
 
 			int cols = (int)Math.ceil(heroBtns.size()/2f);
-			float curX = insets.left + (leftArea - btnWidth * cols + (cols-1))/2f;
+			//shrink buttons if needed so that a row (with 1px gaps) always fits in the left area
+			int btnWidth = Math.min(HeroBtn.MIN_WIDTH + 15, (int)Math.floor((leftArea - (cols-1)) / cols));
+			float curX = insets.left + (leftArea - (btnWidth * cols + (cols-1)))/2f;
 			float curY = title.bottom() + uiSpacing;
 
 			int count = 0;
@@ -325,7 +326,8 @@ public class HeroSelectScene extends PixelScene {
 		} else {
 			background.visible = false;
 
-			int btnWidth = HeroBtn.MIN_WIDTH;
+			//shrink buttons if needed so that every hero fits on narrow screens
+			int btnWidth = Math.min(HeroBtn.MIN_WIDTH, (int)Math.floor(w / (float)heroBtns.size()));
 
 			float curX = insets.left + (w - btnWidth * heroBtns.size()) / 2f;
 			if (curX > 0) {

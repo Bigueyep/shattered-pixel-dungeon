@@ -50,15 +50,21 @@ public class Healing extends Buff {
 	@Override
 	public boolean act(){
 
+		//the broken mirror halves incoming healing
+		int healed = healingThisTick();
+		if (target.buff(BrokenMirror.class) != null){
+			healed = Math.round(healed * BrokenMirror.HEALING_MULTI);
+		}
+
 		if (target.HP < target.HT) {
-			target.HP = Math.min(target.HT, target.HP + healingThisTick());
+			target.HP = Math.min(target.HT, target.HP + healed);
 
 			if (target.HP == target.HT && target instanceof Hero) {
 				((Hero) target).resting = false;
 			}
 		}
 
-		target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healingThisTick()), FloatingText.HEALING);
+		target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healed), FloatingText.HEALING);
 		healingLeft -= healingThisTick();
 		
 		if (healingLeft <= 0){

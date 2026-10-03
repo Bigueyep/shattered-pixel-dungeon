@@ -43,6 +43,7 @@ import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Random;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
@@ -216,6 +217,11 @@ public class ScrollOfMetamorphosis extends ExoticScroll {
 				Talent.initClassTalents(cls, clsTalents);
 
 				Set<Talent> clsTalentsAtTier = clsTalents.get(tier-1).keySet();
+				//these talents only work through the mirror shade's cracks, so other heroes can't get them
+				if (cls == HeroClass.MIRRORSHADE && Dungeon.hero.heroClass != HeroClass.MIRRORSHADE){
+					clsTalentsAtTier.removeAll(Arrays.asList(Talent.TEMPERED_GLASS, Talent.TAIN_DRAUGHT,
+							Talent.ABSORPTION, Talent.SHATTERPROOF, Talent.FRACTURE_POINT));
+				}
 				boolean replacingIsInSet = false;
 				for (Talent talent : clsTalentsAtTier.toArray(new Talent[0])){
 					if (talent == replacing){
@@ -230,6 +236,11 @@ public class ScrollOfMetamorphosis extends ExoticScroll {
 				if (!replacingIsInSet && !clsTalentsAtTier.isEmpty()) {
 					options.put(Random.element(clsTalentsAtTier), Dungeon.hero.pointsInTalent(replacing));
 				}
+			}
+
+			//the options window only fits 6 talents, trim extras now that there are 7 hero classes
+			while (options.size() > 6){
+				options.remove(Random.element(new ArrayList<>(options.keySet())));
 			}
 
 			replaceOptions = options;

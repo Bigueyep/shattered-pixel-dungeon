@@ -79,6 +79,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.PowerOfMany;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mirrorshade.GlassPrison;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.Challenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.rogue.DeathMark;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.Endure;
@@ -612,13 +613,23 @@ public abstract class Char extends Actor {
 	public static int INFINITE_ACCURACY = 1_000_000;
 	public static int INFINITE_EVASION = 1_000_000;
 
+	//true only while hit() is rolling the defender's evasion for a real attack,
+	// other callers of defenseSkill (UI hit reasons, stone glyph) only want the number
+	public static boolean rollingDefense = false;
+
 	final public static boolean hit( Char attacker, Char defender, boolean magic ) {
 		return hit(attacker, defender, magic ? 2f : 1f, magic);
 	}
 
 	public static boolean hit( Char attacker, Char defender, float accMulti, boolean magic ) {
 		float acuStat = attacker.attackSkill( defender );
-		float defStat = defender.defenseSkill( attacker );
+		float defStat;
+		rollingDefense = true;
+		try {
+			defStat = defender.defenseSkill( attacker );
+		} finally {
+			rollingDefense = false;
+		}
 
 		if (defender instanceof Hero && ((Hero) defender).damageInterrupt){
 			((Hero) defender).interrupt();
@@ -1396,7 +1407,8 @@ public abstract class Char extends Actor {
 	//similar to isImmune, but only factors in damage.
 	//Is used in AI decision-making
 	public boolean isInvulnerable( Class effect ){
-		return buff(Challenge.SpectatorFreeze.class) != null || buff(Invulnerability.class) != null;
+		return buff(Challenge.SpectatorFreeze.class) != null || buff(Invulnerability.class) != null
+				|| buff(GlassPrison.Imprisoned.class) != null;
 	}
 
 	protected HashSet<Property> properties = new HashSet<>();

@@ -67,6 +67,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.stones.Runestone;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfIntuition;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MirrorCracks;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Gloves;
@@ -196,6 +197,23 @@ public enum Talent {
 	BODY_FORM(180, 4), MIND_FORM(181, 4), SPIRIT_FORM(182, 4),
 	//Power of Many T4
 	BEAMING_RAY(183, 4), LIFE_LINK(184, 4), STASIS(185, 4),
+
+	//Mirror Shade T1
+	TEMPERED_GLASS(224), REVEALING_SHARD(225), MUTED_STEPS(226), PROTECTIVE_MIRROR(227),
+	//Mirror Shade T2
+	TAIN_DRAUGHT(228), SPECULAR_RIPOSTE(229), ABSORPTION(230), AFTERIMAGE(231), GLASS_MEMORY(232),
+	//Mirror Shade T3
+	SHATTERPROOF(233, 3), FRACTURE_POINT(234, 3),
+	//Reflector T3
+	SHARP_SHARDS(235, 3), ONE_WAY_GLASS(236, 3), POLISHED_SURFACE(237, 3),
+	//Twin T3
+	SPECULAR_LINK(238, 3), SHARED_ECHO(239, 3), TWIN_RESILIENCE(240, 3),
+	//Kaleidoscope T4
+	KALEIDO_FACETS(241, 4), KALEIDO_PERSISTENCE(242, 4), KALEIDO_SHRAPNEL(243, 4),
+	//Inversion T4
+	INVERTED_REACH(244, 4), INVERTED_SHOCK(245, 4), INVERTED_SOVEREIGNTY(246, 4),
+	//Glass Prison T4
+	PRISON_LENGTH(247, 4), PRISON_FRAILTY(248, 4), PRISON_CELLMATES(249, 4),
 
 	//universal T4
 	HEROIC_ENERGY(26, 4), //See icon() and title() for special logic for this one
@@ -463,6 +481,8 @@ public enum Talent {
 					return 154;
 				case CLERIC:
 					return 186;
+				case MIRRORSHADE:
+					return 250;
 			}
 		} else {
 			return icon;
@@ -592,6 +612,15 @@ public enum Talent {
 				hero.HP = Math.min(hero.HP + healing, hero.HT);
 				hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healing), FloatingText.HEALING);
 
+			}
+		}
+		if (hero.hasTalent(TEMPERED_GLASS)){
+			//+1/+2 cracks and 2/3 HP healed
+			MirrorCracks.gain(hero, hero.pointsInTalent(TEMPERED_GLASS));
+			int healing = Math.min(1 + hero.pointsInTalent(TEMPERED_GLASS), hero.HT - hero.HP);
+			if (healing > 0) {
+				hero.HP += healing;
+				hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healing), FloatingText.HEALING);
 			}
 		}
 		if (hero.hasTalent(IRON_STOMACH)){
@@ -751,6 +780,10 @@ public enum Talent {
 			}
 			Dungeon.observe();
 		}
+		if (hero.hasTalent(TAIN_DRAUGHT)){
+			//+1/+2 cracks
+			MirrorCracks.gain(hero, Math.round(factor * hero.pointsInTalent(TAIN_DRAUGHT)));
+		}
 		if (hero.hasTalent(LIQUID_AGILITY)){
 			Buff.prolong(hero, LiquidAgilEVATracker.class, hero.cooldown() + Math.max(0, factor-1));
 			if (factor >= 0.5f){
@@ -863,6 +896,13 @@ public enum Talent {
 		if (hero.pointsInTalent(THIEFS_INTUITION) == 2){
 			if (item instanceof Ring) ((Ring) item).setKnown();
 		}
+		//reveals curses on weapons/armor, and also rings/wands at +2
+		if (hero.hasTalent(REVEALING_SHARD) && !item.cursedKnown){
+			if (item instanceof Weapon || item instanceof Armor
+					|| (hero.pointsInTalent(REVEALING_SHARD) == 2 && (item instanceof Ring || item instanceof Wand))){
+				item.cursedKnown = true;
+			}
+		}
 	}
 
 	public static int onAttackProc( Hero hero, Char enemy, int dmg ){
@@ -911,6 +951,13 @@ public enum Talent {
 			}
 		}
 
+		if (hero.buff(SpecularRiposteTracker.class) != null
+				&& !(hero.belongings.attackingWeapon() instanceof MissileWeapon)){
+			// +20%/+35% damage after a dodge
+			dmg = Math.round(dmg * (1.05f + 0.15f*hero.pointsInTalent(SPECULAR_RIPOSTE)));
+			hero.buff(SpecularRiposteTracker.class).detach();
+		}
+
 		if (hero.hasTalent(DEADLY_FOLLOWUP) && enemy.alignment == Char.Alignment.ENEMY) {
 			if (hero.belongings.attackingWeapon() instanceof MissileWeapon) {
 				if (!(hero.belongings.attackingWeapon() instanceof SpiritBow.SpiritArrow)) {
@@ -923,6 +970,43 @@ public enum Talent {
 		}
 
 		return dmg;
+	}
+
+	public static class SpecularRiposteTracker extends FlavourBuff{
+		{ type = Buff.buffType.POSITIVE; }
+		public int icon() { return BuffIndicator.WEAPON; }
+		public void tintIcon(Image icon) { icon.hardlight(0.6f, 0.4f, 1f); }
+		public float iconFadePercent() { return Math.max(0, 1f - (visualcooldown() / 5)); }
+	}
+	public static class ProtectiveMirrorTracker extends Buff{
+		{ revivePersists = true; }
+		//floors (depth*100 + branch) on which the protective mirror has already been used
+		private final HashSet<Integer> usedFloors = new HashSet<>();
+		public boolean useOnCurrentFloor(){
+			return usedFloors.add(Dungeon.depth*100 + Dungeon.branch);
+		}
+		private static final String USED_FLOORS = "used_floors";
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			int[] floors = new int[usedFloors.size()];
+			int i = 0;
+			for (int floor : usedFloors) floors[i++] = floor;
+			bundle.put(USED_FLOORS, floors);
+		}
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			usedFloors.clear();
+			if (bundle.contains(USED_FLOORS)) {
+				for (int floor : bundle.getIntArray(USED_FLOORS)) usedFloors.add(floor);
+			}
+		}
+	}
+	public static class AfterimageCooldown extends FlavourBuff{
+		public int icon() { return BuffIndicator.TIME; }
+		public void tintIcon(Image icon) { icon.hardlight(0.6f, 0.4f, 1f); }
+		public float iconFadePercent() { return Math.max(0, visualcooldown() / 30); }
 	}
 
 	public static class ProvokedAngerTracker extends FlavourBuff{
@@ -994,6 +1078,9 @@ public enum Talent {
 			case CLERIC:
 				Collections.addAll(tierTalents, SATIATED_SPELLS, HOLY_INTUITION, SEARING_LIGHT, SHIELD_OF_LIGHT);
 				break;
+			case MIRRORSHADE:
+				Collections.addAll(tierTalents, TEMPERED_GLASS, REVEALING_SHARD, MUTED_STEPS, PROTECTIVE_MIRROR);
+				break;
 		}
 		for (Talent talent : tierTalents){
 			if (replacements.containsKey(talent)){
@@ -1023,6 +1110,9 @@ public enum Talent {
 			case CLERIC:
 				Collections.addAll(tierTalents, ENLIGHTENING_MEAL, RECALL_INSCRIPTION, SUNRAY, DIVINE_SENSE, BLESS);
 				break;
+			case MIRRORSHADE:
+				Collections.addAll(tierTalents, TAIN_DRAUGHT, SPECULAR_RIPOSTE, ABSORPTION, AFTERIMAGE, GLASS_MEMORY);
+				break;
 		}
 		for (Talent talent : tierTalents){
 			if (replacements.containsKey(talent)){
@@ -1051,6 +1141,9 @@ public enum Talent {
 				break;
 			case CLERIC:
 				Collections.addAll(tierTalents, CLEANSE, LIGHT_READING);
+				break;
+			case MIRRORSHADE:
+				Collections.addAll(tierTalents, SHATTERPROOF, FRACTURE_POINT);
 				break;
 		}
 		for (Talent talent : tierTalents){
@@ -1115,6 +1208,12 @@ public enum Talent {
 				break;
 			case PALADIN:
 				Collections.addAll(tierTalents, LAY_ON_HANDS, AURA_OF_PROTECTION, WALL_OF_LIGHT);
+				break;
+			case REFLECTOR:
+				Collections.addAll(tierTalents, SHARP_SHARDS, ONE_WAY_GLASS, POLISHED_SURFACE);
+				break;
+			case TWIN:
+				Collections.addAll(tierTalents, SPECULAR_LINK, SHARED_ECHO, TWIN_RESILIENCE);
 				break;
 		}
 		for (Talent talent : tierTalents){

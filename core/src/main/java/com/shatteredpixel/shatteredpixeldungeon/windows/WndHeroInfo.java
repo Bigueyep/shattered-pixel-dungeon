@@ -31,6 +31,7 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.ui.IconButton;
+import com.shatteredpixel.shatteredpixeldungeon.ui.HeroIcon;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Icons;
 import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.TalentButton;
@@ -75,6 +76,9 @@ public class WndHeroInfo extends WndTabbed {
 				break;
 			case CLERIC:
 				tabIcon = new ItemSprite(ItemSpriteSheet.ARTIFACT_TOME, null);
+				break;
+			case MIRRORSHADE:
+				tabIcon = new ItemSprite(ItemSpriteSheet.ARTIFACT_MIRROR, null);
 				break;
 		}
 
@@ -205,6 +209,12 @@ public class WndHeroInfo extends WndTabbed {
 					icons = new Image[]{ new ItemSprite(ItemSpriteSheet.ARTIFACT_TOME),
 							Icons.TALENT.get(),
 							new ItemSprite(ItemSpriteSheet.CUDGEL),
+							new ItemSprite(ItemSpriteSheet.SCROLL_ISAZ)};
+					break;
+				case MIRRORSHADE:
+					icons = new Image[]{ new ItemSprite(ItemSpriteSheet.ARTIFACT_MIRROR),
+							new HeroIcon(HeroSubClass.REFLECTOR),
+							new ItemSprite(ItemSpriteSheet.OBSIDIAN_SHARD),
 							new ItemSprite(ItemSpriteSheet.SCROLL_ISAZ)};
 					break;
 			}

@@ -21,6 +21,7 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.items.spells;
 
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BrokenMirror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
@@ -38,7 +39,9 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTransmutat
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.Runestone;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
+import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
@@ -91,6 +94,11 @@ public class UnstableSpell extends Spell {
 	
 	@Override
 	protected void onCast(Hero hero) {
+
+		if (hero.buff(BrokenMirror.class) != null){
+			GLog.w( Messages.get(BrokenMirror.class, "no_scrolls") );
+			return;
+		}
 		
 		detach( curUser.belongings.backpack );
 		updateQuickslot();
