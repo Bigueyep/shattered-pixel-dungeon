@@ -2423,7 +2423,8 @@ public class Hero extends Char {
 		Dungeon.observe();
 		GameScene.updateFog();
 				
-		Dungeon.hero.belongings.identify();
+		//a rolled back death must not reveal item identities for the resumed run
+		if (!toCheckpoint) Dungeon.hero.belongings.identify();
 
 		int pos = Dungeon.hero.pos;
 

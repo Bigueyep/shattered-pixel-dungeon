@@ -1586,6 +1586,8 @@ public class GameScene extends PixelScene {
 			checkpointBtn = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(Checkpoint.class, "resume", Dungeon.checkpointDepth), 9){
 				@Override
 				protected void onClick() {
+					//the dead hero's buff actions must not stay usable in the resumed run
+					ActionIndicator.clearAction();
 					InterlevelScene.mode = InterlevelScene.Mode.CONTINUE;
 					ShatteredPixelDungeon.switchScene(InterlevelScene.class);
 				}
@@ -1604,8 +1606,14 @@ public class GameScene extends PixelScene {
 		StyledButton restart = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(StartScene.class, "new"), 9){
 			@Override
 			protected void onClick() {
+				//a checkpoint run keeps its slot after death, so every slot may be in use
+				int slot = GamesInProgress.firstEmpty();
+				if (slot == -1){
+					ShatteredPixelDungeon.switchScene(StartScene.class);
+					return;
+				}
 				GamesInProgress.selectedClass = Dungeon.hero.heroClass;
-				GamesInProgress.curSlot = GamesInProgress.firstEmpty();
+				GamesInProgress.curSlot = slot;
 				ShatteredPixelDungeon.switchScene(HeroSelectScene.class);
 			}
 

@@ -773,7 +773,8 @@ public abstract class Wand extends Item {
 						curWand.fx(shot, new Callback() {
 							public void call() {
 								curWand.onZap(shot);
-								if (Random.Float() < WondrousResin.extraCurseEffectChance()){
+								//a staff of translocation may have moved the user onto the target
+								if (curUser.pos != target && Random.Float() < WondrousResin.extraCurseEffectChance()){
 									WondrousResin.forcePositive = true;
 									CursedWand.cursedZap(curWand,
 											curUser,

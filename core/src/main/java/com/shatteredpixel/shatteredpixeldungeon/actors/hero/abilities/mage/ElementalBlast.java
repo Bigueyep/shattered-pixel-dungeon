@@ -324,11 +324,11 @@ public class ElementalBlast extends ArmorAbility {
 
 								//*** Wand of Translocation ***
 								} else if (finalWandCls == WandOfTranslocation.class){
-									if (mob.isAlive() && mob.alignment != Char.Alignment.ALLY
+									if (mob.isAlive() && mob.alignment == Char.Alignment.ENEMY
 											&& !Char.hasProp(mob, Char.Property.BOSS)
-											&& !Char.hasProp(mob, Char.Property.MINIBOSS)) {
-										ScrollOfTeleportation.teleportChar( mob );
-										charsHit++;
+											&& !Char.hasProp(mob, Char.Property.MINIBOSS)
+											&& !Char.hasProp(mob, Char.Property.IMMOVABLE)) {
+										if (ScrollOfTeleportation.teleportChar( mob )) charsHit++;
 									}
 
 								//*** Wand of Prismatic Light ***

@@ -148,7 +148,7 @@ public class WildMagic extends ArmorAbility {
 					@Override
 					public void call() {
 						cur.onZap(aim);
-						boolean alsoCursedZap = Random.Float() < WondrousResin.extraCurseEffectChance();
+						boolean alsoCursedZap = hero.pos != cell && Random.Float() < WondrousResin.extraCurseEffectChance();
 						if (Game.timeTotal - startTime < 0.33f) {
 							hero.sprite.parent.add(new Delayer(0.33f - (Game.timeTotal - startTime)) {
 								@Override
@@ -227,7 +227,8 @@ public class WildMagic extends ArmorAbility {
 		}
 
 		Char ch = Actor.findChar(target);
-		if (!wands.isEmpty() && hero.isAlive()) {
+		//a staff of translocation can move the hero onto the target, the remaining wands would then aim at themselves
+		if (!wands.isEmpty() && hero.isAlive() && ch != hero) {
 			Actor.add(new Actor() {
 				{
 					actPriority = VFX_PRIO-1;

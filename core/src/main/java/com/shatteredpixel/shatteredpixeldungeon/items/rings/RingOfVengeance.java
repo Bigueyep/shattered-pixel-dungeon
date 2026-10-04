@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
@@ -51,7 +52,8 @@ public class RingOfVengeance extends Ring {
 		icon = ItemSpriteSheet.Icons.RING_VENGEANCE;
 		buffClass = Vengeance.class;
 
-		usesTargeting = true;
+		//only set when a release is actually started, see execute()
+		usesTargeting = false;
 	}
 
 	public static final String AC_RELEASE = "RELEASE";
@@ -75,7 +77,8 @@ public class RingOfVengeance extends Ring {
 
 	//called whenever the hero takes damage, each equipped ring stores its own share
 	public static void onDamageTaken( Hero hero, int damage ){
-		if (damage <= 0) return;
+		//like other rings, it has no effect while magic is suppressed
+		if (damage <= 0 || hero.buff(MagicImmune.class) != null) return;
 		for (Vengeance v : hero.buffs(Vengeance.class)){
 			v.store(damage);
 		}
@@ -112,17 +115,23 @@ public class RingOfVengeance extends Ring {
 		super.execute( hero, action );
 
 		if (action.equals( AC_RELEASE )) {
+			//quickslots arm their targeting after execute() based on this flag,
+			// so it must only be true when a cell is actually being selected
+			usesTargeting = false;
 			if (!isEquipped( hero )) {
 				GLog.w( Messages.get(this, "need_equip") );
 			} else if (hero.buff(MagicImmune.class) != null) {
-				GLog.w( Messages.get(Wand.class, "no_magic") );
+				GLog.w( Messages.get(this, "no_magic") );
 			} else if (stored() <= 0) {
 				GLog.w( Messages.get(this, "empty") );
 			} else {
+				usesTargeting = true;
 				curUser = hero;
 				curItem = this;
 				GameScene.selectCell( releaser );
 			}
+		} else {
+			usesTargeting = false;
 		}
 	}
 
@@ -130,7 +139,7 @@ public class RingOfVengeance extends Ring {
 		Ballistica beam = new Ballistica( hero.pos, target, Ballistica.STOP_SOLID );
 		int cell = beam.collisionPos;
 
-		int damage = stored();
+		int damage = Math.min( stored(), capacity( hero ) );
 		stored = 0;
 		updateQuickslot();
 
@@ -155,7 +164,15 @@ public class RingOfVengeance extends Ring {
 			}
 		}
 
+		Invisibility.dispel();
 		hero.spendAndNext( Actor.TICK );
+	}
+
+	@Override
+	public void reset() {
+		super.reset();
+		//rings found in remains from a previous run start empty
+		stored = 0;
 	}
 
 	private static final CellSelector.Listener releaser = new CellSelector.Listener() {

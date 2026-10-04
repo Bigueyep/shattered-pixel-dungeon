@@ -30,14 +30,19 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.RegularLevel;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.Room;
+import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.standard.StandardRoom;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
+import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 //a staff that teleports the user to a visible spot inside the room they are standing in
 public class WandOfTranslocation extends Wand {
@@ -54,20 +59,20 @@ public class WandOfTranslocation extends Wand {
 		return 6 + 2*lvl;
 	}
 
-	//returns the closest valid cell to the target along the line of fire, or -1 if there is none
 	public static int destination( Char user, int target, int lvl ){
-		Ballistica path = new Ballistica(user.pos, target, Ballistica.STOP_TARGET | Ballistica.STOP_SOLID);
+		return destination(user, new Ballistica(user.pos, target, Ballistica.STOP_TARGET | Ballistica.STOP_SOLID), lvl);
+	}
 
-		Room room = null;
-		if (Dungeon.level instanceof RegularLevel){
-			room = ((RegularLevel) Dungeon.level).room(user.pos);
-		}
+	//returns the closest valid cell to the target along the line of fire, or -1 if there is none
+	public static int destination( Char user, Ballistica path, int lvl ){
+
+		ArrayList<Room> rooms = currentRooms(user.pos);
 
 		int best = -1;
 		for (int i = 1; i <= path.dist && i < path.path.size(); i++){
 			int cell = path.path.get(i);
-			if (room != null) {
-				if (!room.inside(Dungeon.level.cellToPoint(cell))) break;
+			if (rooms != null) {
+				if (!insideAny(rooms, cell)) break;
 			} else if (Dungeon.level.distance(user.pos, cell) > range(lvl)) {
 				break;
 			}
@@ -79,6 +84,50 @@ public class WandOfTranslocation extends Wand {
 			}
 		}
 		return best;
+	}
+
+	//the rooms the user counts as standing in: every room whose area (walls included) contains them,
+	// so doorways work, plus rooms merged into those (joined by an opening rather than a door).
+	// Returns null where the level has no rooms.
+	private static ArrayList<Room> currentRooms( int pos ){
+		if (!(Dungeon.level instanceof RegularLevel)) return null;
+
+		ArrayList<Room> result = new ArrayList<>();
+		for (Room r : ((RegularLevel) Dungeon.level).rooms()){
+			if (containsInclusive(r, pos)) result.add(r);
+		}
+		if (result.isEmpty()) return null;
+
+		for (Room r : new ArrayList<>(result)){
+			if (!(r instanceof StandardRoom)) continue;
+			for (Room n : r.connected.keySet()){
+				Room.Door d = r.connected.get(n);
+				if (n instanceof StandardRoom && d != null && !result.contains(n)){
+					int t = Dungeon.level.map[d.x + d.y * Dungeon.level.width()];
+					if ((Terrain.flags[t] & Terrain.SOLID) == 0 && !isDoor(t)){
+						result.add(n);
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	private static boolean isDoor( int terrain ){
+		return terrain == Terrain.DOOR || terrain == Terrain.OPEN_DOOR || terrain == Terrain.LOCKED_DOOR
+				|| terrain == Terrain.CRYSTAL_DOOR || terrain == Terrain.SECRET_DOOR || terrain == Terrain.HERO_LKD_DR;
+	}
+
+	private static boolean containsInclusive( Room r, int cell ){
+		Point p = Dungeon.level.cellToPoint(cell);
+		return p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
+	}
+
+	private static boolean insideAny( ArrayList<Room> rooms, int cell ){
+		for (Room r : rooms){
+			if (containsInclusive(r, cell)) return true;
+		}
+		return false;
 	}
 
 	@Override
@@ -93,7 +142,8 @@ public class WandOfTranslocation extends Wand {
 
 	@Override
 	public void onZap(Ballistica bolt) {
-		int dest = destination(curUser, bolt.collisionPos, buffedLvl());
+		//walk the bolt that was actually fired, not a re-traced line to where it stopped
+		int dest = destination(curUser, bolt, buffedLvl());
 		if (dest == -1){
 			GLog.w( Messages.get(this, "no_destination") );
 			return;

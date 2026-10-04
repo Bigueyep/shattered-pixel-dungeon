@@ -28,6 +28,7 @@ import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.HeroSelectScene;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.StartScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.InterlevelScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.RankingsScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.TitleScene;
@@ -79,8 +80,14 @@ public class WndGame extends Window {
 			addButton( curBtn = new RedButton( Messages.get(this, "start") ) {
 				@Override
 				protected void onClick() {
+					//a checkpoint run keeps its slot after death, so every slot may be in use
+					int slot = GamesInProgress.firstEmpty();
+					if (slot == -1){
+						ShatteredPixelDungeon.switchScene(StartScene.class);
+						return;
+					}
 					GamesInProgress.selectedClass = Dungeon.hero.heroClass;
-					GamesInProgress.curSlot = GamesInProgress.firstEmpty();
+					GamesInProgress.curSlot = slot;
 					ShatteredPixelDungeon.switchScene(HeroSelectScene.class);
 				}
 			} );

@@ -22,6 +22,8 @@
 package com.shatteredpixel.shatteredpixeldungeon;
 
 import com.badlogic.gdx.files.FileHandle;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
 import com.watabou.utils.FileUtils;
 
 import java.io.IOException;
@@ -59,10 +61,20 @@ public class Checkpoint {
 				|| Dungeon.depth <= Dungeon.checkpointDepth){
 			return;
 		}
+		//a hero who fell into this floor hasn't taken the landing damage yet, the checkpoint
+		// must not include that pending fall or every resume would replay it
+		Chasm.Falling falling = Dungeon.hero.buff(Chasm.Falling.class);
+		if (falling != null) falling.detach();
+
 		Dungeon.checkpointDepth = Dungeon.depth;
 		Dungeon.saveAll();
 		save(GamesInProgress.curSlot);
 		justSaved = true;
+
+		if (falling != null){
+			Buff.affect(Dungeon.hero, Chasm.Falling.class);
+			Dungeon.saveAll();
+		}
 	}
 
 	private static String gameFileName( int slot ){

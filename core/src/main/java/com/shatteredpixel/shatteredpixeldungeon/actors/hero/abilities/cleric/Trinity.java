@@ -52,6 +52,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.UnstableSpellboo
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfFireblast;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfVengeance;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfRegrowth;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Crystal;
@@ -355,6 +356,8 @@ public class Trinity extends ArmorAbility {
 						discoveredClasses.add(cls);
 					}
 				}
+				//vengeance needs a worn ring to store and release damage, spirit form can't imitate it
+				discoveredClasses.remove(RingOfVengeance.class);
 				for (Class<?> cls : Catalog.ARTIFACTS.items()) {
 					if (Statistics.itemTypesDiscovered.contains(cls)) {
 						discoveredClasses.add(cls);
