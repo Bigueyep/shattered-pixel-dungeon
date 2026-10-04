@@ -209,6 +209,9 @@ public class Dungeon {
 
 	public static boolean daily;
 	public static boolean dailyReplay;
+	//optional checkpoint mode, chosen when starting a run (see Checkpoint)
+	public static boolean checkpoints;
+	public static int checkpointDepth;
 	public static String customSeedText = "";
 	public static long seed;
 	public static long lastPlayed;
@@ -235,6 +238,11 @@ public class Dungeon {
 		initialVersion = version = Game.versionCode;
 		challenges = SPDSettings.challenges();
 		mobsToChampion = 1;
+
+		checkpoints = SPDSettings.checkpoints() && !daily;
+		checkpointDepth = 0;
+		Checkpoint.clear(GamesInProgress.curSlot);
+		Checkpoint.justSaved = false;
 
 		Actor.clear();
 		Actor.resetNextID();
@@ -604,6 +612,8 @@ public class Dungeon {
 	private static final String CUSTOM_SEED	= "custom_seed";
 	private static final String DAILY	    = "daily";
 	private static final String DAILY_REPLAY= "daily_replay";
+	private static final String CHECKPOINTS = "checkpoints";
+	private static final String CHECKPOINT_DEPTH = "checkpoint_depth";
 	private static final String LAST_PLAYED = "last_played";
 	private static final String CHALLENGES	= "challenges";
 	private static final String MOBS_TO_CHAMPION	= "mobs_to_champion";
@@ -631,6 +641,8 @@ public class Dungeon {
 			bundle.put( CUSTOM_SEED, customSeedText );
 			bundle.put( DAILY, daily );
 			bundle.put( DAILY_REPLAY, dailyReplay );
+			bundle.put( CHECKPOINTS, checkpoints );
+			bundle.put( CHECKPOINT_DEPTH, checkpointDepth );
 			bundle.put( LAST_PLAYED, lastPlayed = Game.realTime);
 			bundle.put( CHALLENGES, challenges );
 			bundle.put( MOBS_TO_CHAMPION, mobsToChampion );
@@ -731,6 +743,8 @@ public class Dungeon {
 		customSeedText = bundle.getString( CUSTOM_SEED );
 		daily = bundle.getBoolean( DAILY );
 		dailyReplay = bundle.getBoolean( DAILY_REPLAY );
+		checkpoints = bundle.getBoolean( CHECKPOINTS );
+		checkpointDepth = bundle.getInt( CHECKPOINT_DEPTH );
 
 		Actor.clear();
 		Actor.restoreNextID( bundle );
@@ -851,6 +865,7 @@ public class Dungeon {
 		}
 
 		FileUtils.overwriteFile(GamesInProgress.gameFile(save), 1);
+		Checkpoint.clear(save);
 		
 		GamesInProgress.delete( save );
 	}
@@ -870,7 +885,8 @@ public class Dungeon {
 	}
 	
 	public static void fail( Object cause ) {
-		if (WndResurrect.instance == null) {
+		//a death in checkpoint mode isn't the end of the run, the save is rolled back instead
+		if (WndResurrect.instance == null && !(Checkpoint.enabled() && Checkpoint.exists(GamesInProgress.curSlot))) {
 			updateLevelExplored();
 			Statistics.gameWon = false;
 			Rankings.INSTANCE.submit( false, cause );

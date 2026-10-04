@@ -23,6 +23,7 @@ package com.shatteredpixel.shatteredpixeldungeon.scenes;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Chrome;
+import com.shatteredpixel.shatteredpixeldungeon.Checkpoint;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
@@ -422,6 +423,7 @@ public class InterlevelScene extends PixelScene {
 						switch (mode) {
 							case DESCEND:
 								descend();
+								Checkpoint.onArrival();
 								break;
 							case ASCEND:
 								ascend();
@@ -437,6 +439,7 @@ public class InterlevelScene extends PixelScene {
 								break;
 							case FALL:
 								fall();
+								Checkpoint.onArrival();
 								break;
 							case RESET:
 								reset();

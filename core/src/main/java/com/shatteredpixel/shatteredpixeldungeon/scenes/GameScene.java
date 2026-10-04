@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Chrome;
+import com.shatteredpixel.shatteredpixeldungeon.Checkpoint;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.Rankings;
@@ -657,6 +658,11 @@ public class GameScene extends PixelScene {
 				GLog.h(Messages.get(this, "resurrect"), Dungeon.depth);
 			} else {
 				GLog.h(Messages.get(this, "return"), Dungeon.depth);
+			}
+
+			if (Checkpoint.justSaved){
+				Checkpoint.justSaved = false;
+				GLog.p(Messages.get(Checkpoint.class, "saved"));
 			}
 
 			//glass memory: reveals the layout around the arrival point on new floors
@@ -1574,6 +1580,27 @@ public class GameScene extends PixelScene {
 		gameOver.show( 0x000000, 2f );
 		scene.showBanner( gameOver );
 
+		//in checkpoint mode the save has been rolled back, so the run can be resumed from there
+		StyledButton checkpointBtn = null;
+		if (Checkpoint.enabled() && Checkpoint.exists(GamesInProgress.curSlot)){
+			checkpointBtn = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(Checkpoint.class, "resume", Dungeon.checkpointDepth), 9){
+				@Override
+				protected void onClick() {
+					InterlevelScene.mode = InterlevelScene.Mode.CONTINUE;
+					ShatteredPixelDungeon.switchScene(InterlevelScene.class);
+				}
+
+				@Override
+				public void update() {
+					alpha((float)Math.pow(gameOver.am, 2));
+					super.update();
+				}
+			};
+			checkpointBtn.icon(Icons.get(Icons.REPEAT));
+			checkpointBtn.alpha(0);
+			checkpointBtn.camera = uiCamera;
+		}
+
 		StyledButton restart = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(StartScene.class, "new"), 9){
 			@Override
 			protected void onClick() {
@@ -1620,6 +1647,15 @@ public class GameScene extends PixelScene {
 				restart.bottom() + 2
 		);
 		scene.add(menu);
+
+		if (checkpointBtn != null){
+			checkpointBtn.setSize(Math.max(80, checkpointBtn.reqWidth()), 20);
+			checkpointBtn.setPos(
+					align(uiCamera, (checkpointBtn.camera.width - checkpointBtn.width()) / 2),
+					menu.bottom() + 2
+			);
+			scene.add(checkpointBtn);
+		}
 	}
 	
 	public static void bossSlain() {
