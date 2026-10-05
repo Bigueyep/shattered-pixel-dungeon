@@ -224,6 +224,9 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_LAST_DAILY	= "last_daily";
 	public static final String KEY_INTRO		= "intro";
 	public static final String KEY_CHECKPOINTS	= "checkpoints";
+	public static final String KEY_LOADOUT		= "loadout";
+	public static final String KEY_LOADOUT_WEAPON	= "loadout_weapon";
+	public static final String KEY_LOADOUT_RELIC	= "loadout_relic";
 
 	public static final String KEY_SUPPORT_NAGGED= "support_nagged";
 	public static final String KEY_VICTORY_NAGGED= "victory_nagged";
@@ -251,6 +254,30 @@ public class SPDSettings extends GameSettings {
 
 	public static boolean checkpoints() {
 		return getBoolean( KEY_CHECKPOINTS, false );
+	}
+
+	public static void loadout( boolean value ) {
+		put( KEY_LOADOUT, value );
+	}
+
+	public static boolean loadout() {
+		return getBoolean( KEY_LOADOUT, false );
+	}
+
+	public static void loadoutWeapon( String value ) {
+		put( KEY_LOADOUT_WEAPON, value );
+	}
+
+	public static String loadoutWeapon() {
+		return getString( KEY_LOADOUT_WEAPON, "", 100 );
+	}
+
+	public static void loadoutRelic( String value ) {
+		put( KEY_LOADOUT_RELIC, value );
+	}
+
+	public static String loadoutRelic() {
+		return getString( KEY_LOADOUT_RELIC, "", 100 );
 	}
 
 	public static void challenges( int value ) {
