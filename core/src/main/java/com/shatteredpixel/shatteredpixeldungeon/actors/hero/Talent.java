@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ArtifactRecharge;
@@ -603,6 +604,19 @@ public enum Talent {
 
 	public static class CachedRationsDropped extends CounterBuff{{revivePersists = true;}};
 	public static class NatureBerriesDropped extends CounterBuff{{revivePersists = true;}};
+
+	//called from the interlevel scene's loading thread after descending or falling to a floor
+	public static void onFloorArrival( Hero hero ){
+		//glass memory: reveals the layout around the arrival point on new floors
+		if (hero.hasTalent(GLASS_MEMORY) && Dungeon.depth == Statistics.deepestFloor){
+			int radius = 2 + 3*hero.pointsInTalent(GLASS_MEMORY);
+			for (int i = 0; i < Dungeon.level.length(); i++){
+				if (Dungeon.level.discoverable[i] && Dungeon.level.distance(i, hero.pos) <= radius){
+					Dungeon.level.mapped[i] = true;
+				}
+			}
+		}
+	}
 
 	public static void onFoodEaten( Hero hero, float foodVal, Item foodSource ){
 		if (hero.hasTalent(HEARTY_MEAL)){

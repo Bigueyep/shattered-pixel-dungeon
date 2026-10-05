@@ -665,19 +665,6 @@ public class GameScene extends PixelScene {
 				GLog.p(Messages.get(Checkpoint.class, "saved"));
 			}
 
-			//glass memory: reveals the layout around the arrival point on new floors
-			if (Dungeon.hero.hasTalent(Talent.GLASS_MEMORY)
-					&& Dungeon.depth == Statistics.deepestFloor
-					&& (InterlevelScene.mode == InterlevelScene.Mode.DESCEND || InterlevelScene.mode == InterlevelScene.Mode.FALL)){
-				int radius = 2 + 3*Dungeon.hero.pointsInTalent(Talent.GLASS_MEMORY);
-				for (int i = 0; i < Dungeon.level.length(); i++){
-					if (Dungeon.level.discoverable[i] && Dungeon.level.distance(i, Dungeon.hero.pos) <= radius){
-						Dungeon.level.mapped[i] = true;
-					}
-				}
-				GameScene.updateFog();
-			}
-
 			if (Dungeon.hero.hasTalent(Talent.ROGUES_FORESIGHT)
 					&& Dungeon.level instanceof RegularLevel && Dungeon.branch == 0){
 				int reqSecrets = Dungeon.level.feeling == Level.Feeling.SECRETS ? 2 : 1;
@@ -1663,6 +1650,44 @@ public class GameScene extends PixelScene {
 					menu.bottom() + 2
 			);
 			scene.add(checkpointBtn);
+
+			//a checkpoint run can also be given up, which ranks it like a normal death and frees the slot
+			final StyledButton resumeBtn = checkpointBtn;
+			StyledButton abandonBtn = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(Checkpoint.class, "abandon"), 9){
+				@Override
+				protected void onClick() {
+					final StyledButton self = this;
+					GameScene.show(new WndOptions(Icons.get(Icons.WARNING),
+							Messages.get(Checkpoint.class, "abandon_title"),
+							Messages.get(Checkpoint.class, "abandon_body"),
+							Messages.get(Checkpoint.class, "abandon_yes"),
+							Messages.get(Checkpoint.class, "abandon_no")){
+						@Override
+						protected void onSelect(int index) {
+							if (index == 0){
+								Checkpoint.abandon(GamesInProgress.curSlot);
+								resumeBtn.visible = resumeBtn.active = false;
+								self.visible = self.active = false;
+							}
+						}
+					});
+				}
+
+				@Override
+				public void update() {
+					alpha((float)Math.pow(gameOver.am, 2));
+					super.update();
+				}
+			};
+			abandonBtn.icon(Icons.get(Icons.CLOSE));
+			abandonBtn.alpha(0);
+			abandonBtn.camera = uiCamera;
+			abandonBtn.setSize(Math.max(80, abandonBtn.reqWidth()), 20);
+			abandonBtn.setPos(
+					align(uiCamera, (abandonBtn.camera.width - abandonBtn.width()) / 2),
+					checkpointBtn.bottom() + 2
+			);
+			scene.add(abandonBtn);
 		}
 	}
 	

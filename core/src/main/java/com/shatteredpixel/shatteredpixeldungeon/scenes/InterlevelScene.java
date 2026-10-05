@@ -30,6 +30,7 @@ import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.ShadowBox;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
@@ -423,6 +424,7 @@ public class InterlevelScene extends PixelScene {
 						switch (mode) {
 							case DESCEND:
 								descend();
+								Talent.onFloorArrival(Dungeon.hero);
 								Checkpoint.onArrival();
 								break;
 							case ASCEND:
@@ -439,6 +441,7 @@ public class InterlevelScene extends PixelScene {
 								break;
 							case FALL:
 								fall();
+								Talent.onFloorArrival(Dungeon.hero);
 								Checkpoint.onArrival();
 								break;
 							case RESET:

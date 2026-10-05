@@ -773,12 +773,13 @@ public abstract class Wand extends Item {
 						curWand.fx(shot, new Callback() {
 							public void call() {
 								curWand.onZap(shot);
-								//a staff of translocation may have moved the user onto the target
-								if (curUser.pos != target && Random.Float() < WondrousResin.extraCurseEffectChance()){
+								//a staff of translocation may have moved the user, the bonus bolt must not hit them
+								final Ballistica extra = new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT);
+								if (extra.collisionPos != curUser.pos && Random.Float() < WondrousResin.extraCurseEffectChance()){
 									WondrousResin.forcePositive = true;
 									CursedWand.cursedZap(curWand,
 											curUser,
-											new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT), new Callback() {
+											extra, new Callback() {
 												@Override
 												public void call() {
 													WondrousResin.forcePositive = false;

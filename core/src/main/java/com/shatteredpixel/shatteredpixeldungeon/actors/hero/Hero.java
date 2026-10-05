@@ -2405,7 +2405,8 @@ public class Hero extends Char {
 		boolean[] visited = Dungeon.level.visited;
 		boolean[] discoverable = Dungeon.level.discoverable;
 		
-		for (int i=0; i < length; i++) {
+		//a rolled back death must not reveal the floor's layout or secrets for the resumed run
+		for (int i=0; i < length && !toCheckpoint; i++) {
 			
 			int terr = map[i];
 			

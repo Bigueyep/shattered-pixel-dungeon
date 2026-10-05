@@ -125,10 +125,11 @@ public class RingOfVengeance extends Ring {
 			} else if (stored() <= 0) {
 				GLog.w( Messages.get(this, "empty") );
 			} else {
-				usesTargeting = true;
 				curUser = hero;
 				curItem = this;
 				GameScene.selectCell( releaser );
+				//set after selectCell, which may cancel (and so reset) a previous release selection
+				usesTargeting = true;
 			}
 		} else {
 			usesTargeting = false;
@@ -169,6 +170,15 @@ public class RingOfVengeance extends Ring {
 	}
 
 	@Override
+	public boolean doUnequip( Hero hero, boolean collect, boolean single ) {
+		if (super.doUnequip( hero, collect, single )){
+			usesTargeting = false;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
 	public void reset() {
 		super.reset();
 		//rings found in remains from a previous run start empty
@@ -178,7 +188,12 @@ public class RingOfVengeance extends Ring {
 	private static final CellSelector.Listener releaser = new CellSelector.Listener() {
 		@Override
 		public void onSelect( Integer target ) {
-			if (target == null || !(curItem instanceof RingOfVengeance)) {
+			if (!(curItem instanceof RingOfVengeance)) {
+				return;
+			}
+			//the selection is over (fired or cancelled), quickslots must not arm targeting again
+			((RingOfVengeance) curItem).usesTargeting = false;
+			if (target == null) {
 				return;
 			}
 			if (target == curUser.pos) {

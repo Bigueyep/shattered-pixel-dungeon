@@ -36,6 +36,8 @@ public class Checkpoint {
 
 	//set when a checkpoint was just taken, so the game scene can tell the player
 	public static boolean justSaved = false;
+	//what killed the hero on a rolled back death, used if the player gives up the run
+	public static Object lastDeathCause = null;
 
 	public static String folder( int slot ){
 		return GamesInProgress.gameFolder(slot) + "/" + FOLDER;
@@ -117,5 +119,14 @@ public class Checkpoint {
 
 	public static void clear( int slot ){
 		FileUtils.deleteDir(folder(slot));
+	}
+
+	//ends a checkpoint run for good after a death: it is ranked like a normal death and the slot is freed.
+	// This also guarantees there is always a way out of a checkpoint the hero can't survive.
+	public static void abandon( int slot ){
+		clear(slot);
+		Dungeon.fail(lastDeathCause != null ? lastDeathCause : Checkpoint.class);
+		Dungeon.deleteGame(slot, true);
+		lastDeathCause = null;
 	}
 }

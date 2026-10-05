@@ -243,6 +243,7 @@ public class Dungeon {
 		checkpointDepth = 0;
 		Checkpoint.clear(GamesInProgress.curSlot);
 		Checkpoint.justSaved = false;
+		Checkpoint.lastDeathCause = null;
 
 		Actor.clear();
 		Actor.resetNextID();
@@ -886,7 +887,11 @@ public class Dungeon {
 	
 	public static void fail( Object cause ) {
 		//a death in checkpoint mode isn't the end of the run, the save is rolled back instead
-		if (WndResurrect.instance == null && !(Checkpoint.enabled() && Checkpoint.exists(GamesInProgress.curSlot))) {
+		if (Checkpoint.enabled() && Checkpoint.exists(GamesInProgress.curSlot)){
+			Checkpoint.lastDeathCause = cause;
+			return;
+		}
+		if (WndResurrect.instance == null) {
 			updateLevelExplored();
 			Statistics.gameWon = false;
 			Rankings.INSTANCE.submit( false, cause );

@@ -140,12 +140,13 @@ public class MindForm extends ClericSpell {
 					wand.fx(shot, new Callback() {
 						public void call() {
 							wand.onZap(shot);
-							//a staff of translocation may have moved the hero onto the target
-							if (Dungeon.hero.pos != cell && Random.Float() < WondrousResin.extraCurseEffectChance()){
+							//a staff of translocation may have moved the hero, the bonus bolt must not hit them
+							final Ballistica extra = new Ballistica(Dungeon.hero.pos, cell, Ballistica.MAGIC_BOLT);
+							if (extra.collisionPos != Dungeon.hero.pos && Random.Float() < WondrousResin.extraCurseEffectChance()){
 								WondrousResin.forcePositive = true;
 								CursedWand.cursedZap(wand,
 										Dungeon.hero,
-										new Ballistica(Dungeon.hero.pos, cell, Ballistica.MAGIC_BOLT), new Callback() {
+										extra, new Callback() {
 											@Override
 											public void call() {
 												WondrousResin.forcePositive = false;

@@ -41,6 +41,7 @@ import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
+import com.watabou.utils.Rect;
 
 import java.util.ArrayList;
 
@@ -87,30 +88,48 @@ public class WandOfTranslocation extends Wand {
 	}
 
 	//the rooms the user counts as standing in: every room whose area (walls included) contains them,
-	// so doorways work, plus rooms merged into those (joined by an opening rather than a door).
+	// so doorways work, plus standard rooms merged into those (joined by a wide opening rather than a door).
 	// Returns null where the level has no rooms.
 	private static ArrayList<Room> currentRooms( int pos ){
 		if (!(Dungeon.level instanceof RegularLevel)) return null;
 
+		ArrayList<Room> rooms = ((RegularLevel) Dungeon.level).rooms();
 		ArrayList<Room> result = new ArrayList<>();
-		for (Room r : ((RegularLevel) Dungeon.level).rooms()){
+		for (Room r : rooms){
 			if (containsInclusive(r, pos)) result.add(r);
 		}
 		if (result.isEmpty()) return null;
 
+		//merges are detected from the map, as the room connection graph is not kept in saves
 		for (Room r : new ArrayList<>(result)){
 			if (!(r instanceof StandardRoom)) continue;
-			for (Room n : r.connected.keySet()){
-				Room.Door d = r.connected.get(n);
-				if (n instanceof StandardRoom && d != null && !result.contains(n)){
-					int t = Dungeon.level.map[d.x + d.y * Dungeon.level.width()];
-					if ((Terrain.flags[t] & Terrain.SOLID) == 0 && !isDoor(t)){
-						result.add(n);
-					}
+			for (Room n : rooms){
+				if (n != r && n instanceof StandardRoom && !result.contains(n) && mergedWith(r, n)){
+					result.add(n);
 				}
 			}
 		}
 		return result;
+	}
+
+	//two rooms are merged if their shared wall has an opening of 2 or more non-door tiles
+	private static boolean mergedWith( Room a, Room b ){
+		Rect edge = a.intersect(b);
+		int openings = 0;
+		if (edge.width() == 0 && edge.height() > 0){
+			for (int y = edge.top+1; y < edge.bottom; y++){
+				if (isOpening(Dungeon.level.map[edge.left + y*Dungeon.level.width()])) openings++;
+			}
+		} else if (edge.height() == 0 && edge.width() > 0){
+			for (int x = edge.left+1; x < edge.right; x++){
+				if (isOpening(Dungeon.level.map[x + edge.top*Dungeon.level.width()])) openings++;
+			}
+		}
+		return openings >= 2;
+	}
+
+	private static boolean isOpening( int terrain ){
+		return (Terrain.flags[terrain] & Terrain.SOLID) == 0 && !isDoor(terrain);
 	}
 
 	private static boolean isDoor( int terrain ){
