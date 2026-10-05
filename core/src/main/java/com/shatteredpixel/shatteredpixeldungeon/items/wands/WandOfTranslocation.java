@@ -112,20 +112,26 @@ public class WandOfTranslocation extends Wand {
 		return result;
 	}
 
-	//two rooms are merged if their shared wall has an opening of 2 or more non-door tiles
+	//two rooms are merged if their shared wall has an opening of 2 or more non-door tiles,
+	// at least one of them walkable (decorative chasm strips between unconnected rooms don't count)
 	private static boolean mergedWith( Room a, Room b ){
 		Rect edge = a.intersect(b);
 		int openings = 0;
+		int walkable = 0;
 		if (edge.width() == 0 && edge.height() > 0){
 			for (int y = edge.top+1; y < edge.bottom; y++){
-				if (isOpening(Dungeon.level.map[edge.left + y*Dungeon.level.width()])) openings++;
+				int cell = edge.left + y*Dungeon.level.width();
+				if (isOpening(Dungeon.level.map[cell])) openings++;
+				if (isOpening(Dungeon.level.map[cell]) && Dungeon.level.passable[cell]) walkable++;
 			}
 		} else if (edge.height() == 0 && edge.width() > 0){
 			for (int x = edge.left+1; x < edge.right; x++){
-				if (isOpening(Dungeon.level.map[x + edge.top*Dungeon.level.width()])) openings++;
+				int cell = x + edge.top*Dungeon.level.width();
+				if (isOpening(Dungeon.level.map[cell])) openings++;
+				if (isOpening(Dungeon.level.map[cell]) && Dungeon.level.passable[cell]) walkable++;
 			}
 		}
-		return openings >= 2;
+		return openings >= 2 && walkable >= 1;
 	}
 
 	private static boolean isOpening( int terrain ){

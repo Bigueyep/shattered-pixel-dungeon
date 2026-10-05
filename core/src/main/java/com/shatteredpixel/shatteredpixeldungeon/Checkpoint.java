@@ -23,7 +23,9 @@ package com.shatteredpixel.shatteredpixeldungeon;
 
 import com.badlogic.gdx.files.FileHandle;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.watabou.utils.FileUtils;
 
 import java.io.IOException;
@@ -125,6 +127,10 @@ public class Checkpoint {
 	// This also guarantees there is always a way out of a checkpoint the hero can't survive.
 	public static void abandon( int slot ){
 		clear(slot);
+		//the death steps a rolled back death skipped, so the run is ranked exactly like a normal death
+		Hero.revealOnDeath();
+		Dungeon.observe();
+		GameScene.updateFog();
 		Dungeon.fail(lastDeathCause != null ? lastDeathCause : Checkpoint.class);
 		Dungeon.deleteGame(slot, true);
 		lastDeathCause = null;

@@ -35,6 +35,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClassArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.WondrousResin;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.CursedWand;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfTranslocation;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.ui.HeroIcon;
@@ -147,9 +148,12 @@ public class WildMagic extends ArmorAbility {
 				cur.fx(aim, new Callback() {
 					@Override
 					public void call() {
+						int startPos = hero.pos;
 						cur.onZap(aim);
-						//a staff of translocation may have moved the hero, the bonus bolt must not hit them
-						boolean alsoCursedZap = new Ballistica(hero.pos, cell, Ballistica.MAGIC_BOLT).collisionPos != hero.pos
+						//a staff of translocation may have moved the hero, the bonus bolt must then not hit them
+						boolean movedIntoOwnBolt = hero.pos != startPos
+								&& (hero.pos == cell || new Ballistica(hero.pos, cell, Ballistica.MAGIC_BOLT).collisionPos == hero.pos);
+						boolean alsoCursedZap = !movedIntoOwnBolt
 								&& Random.Float() < WondrousResin.extraCurseEffectChance();
 						if (Game.timeTotal - startTime < 0.33f) {
 							hero.sprite.parent.add(new Delayer(0.33f - (Game.timeTotal - startTime)) {
@@ -233,7 +237,8 @@ public class WildMagic extends ArmorAbility {
 		//a staff of translocation can move the hero onto or next to the target,
 		// the remaining wands would then hit the hero, so the chain ends there instead
 		boolean selfAimed = ch == hero
-				|| new Ballistica(hero.pos, next, Ballistica.MAGIC_BOLT).collisionPos == hero.pos;
+				|| (cur instanceof WandOfTranslocation
+					&& new Ballistica(hero.pos, next, Ballistica.MAGIC_BOLT).collisionPos == hero.pos);
 		if (!wands.isEmpty() && hero.isAlive() && !selfAimed) {
 			Actor.add(new Actor() {
 				{

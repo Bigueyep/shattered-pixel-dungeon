@@ -772,10 +772,13 @@ public abstract class Wand extends Item {
 					} else {
 						curWand.fx(shot, new Callback() {
 							public void call() {
+								int startPos = curUser.pos;
 								curWand.onZap(shot);
-								//a staff of translocation may have moved the user, the bonus bolt must not hit them
+								//a staff of translocation may have moved the user, the bonus bolt must then not hit them
 								final Ballistica extra = new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT);
-								if (extra.collisionPos != curUser.pos && Random.Float() < WondrousResin.extraCurseEffectChance()){
+								boolean movedIntoOwnBolt = curUser.pos != startPos
+										&& (curUser.pos == target || extra.collisionPos == curUser.pos);
+								if (!movedIntoOwnBolt && Random.Float() < WondrousResin.extraCurseEffectChance()){
 									WondrousResin.forcePositive = true;
 									CursedWand.cursedZap(curWand,
 											curUser,

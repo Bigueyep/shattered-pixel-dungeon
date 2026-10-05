@@ -2400,32 +2400,12 @@ public class Hero extends Char {
 		//in checkpoint mode the run continues from the last checkpoint instead of ending
 		boolean toCheckpoint = Checkpoint.enabled() && Checkpoint.exists(GamesInProgress.curSlot);
 		
-		int length = Dungeon.level.length();
-		int[] map = Dungeon.level.map;
-		boolean[] visited = Dungeon.level.visited;
-		boolean[] discoverable = Dungeon.level.discoverable;
-		
-		//a rolled back death must not reveal the floor's layout or secrets for the resumed run
-		for (int i=0; i < length && !toCheckpoint; i++) {
-			
-			int terr = map[i];
-			
-			if (discoverable[i]) {
-				
-				visited[i] = true;
-				if ((Terrain.flags[terr] & Terrain.SECRET) != 0) {
-					Dungeon.level.discover( i );
-				}
-			}
-		}
-		
-		if (!toCheckpoint) Bones.leave();
+		//a rolled back death must not reveal the floor, leave bones or identify items for the resumed run,
+		// these happen later in Checkpoint.abandon if the player gives up the run instead
+		if (!toCheckpoint) revealOnDeath();
 		
 		Dungeon.observe();
 		GameScene.updateFog();
-				
-		//a rolled back death must not reveal item identities for the resumed run
-		if (!toCheckpoint) Dungeon.hero.belongings.identify();
 
 		int pos = Dungeon.hero.pos;
 
@@ -2470,6 +2450,31 @@ public class Hero extends Char {
 		if (!toCheckpoint || !Checkpoint.restore( GamesInProgress.curSlot )){
 			Dungeon.deleteGame( GamesInProgress.curSlot, true );
 		}
+	}
+
+	//reveals the floor's layout and secrets, leaves bones and identifies the hero's items
+	public static void revealOnDeath(){
+		int length = Dungeon.level.length();
+		int[] map = Dungeon.level.map;
+		boolean[] visited = Dungeon.level.visited;
+		boolean[] discoverable = Dungeon.level.discoverable;
+		
+		for (int i=0; i < length; i++) {
+			
+			int terr = map[i];
+			
+			if (discoverable[i]) {
+				
+				visited[i] = true;
+				if ((Terrain.flags[terr] & Terrain.SECRET) != 0) {
+					Dungeon.level.discover( i );
+				}
+			}
+		}
+		
+		Bones.leave();
+		
+		Dungeon.hero.belongings.identify();
 	}
 
 	//effectively cache this buff to prevent having to call buff(...) a bunch.
