@@ -223,6 +223,7 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_CUSTOM_SEED	= "custom_seed";
 	public static final String KEY_LAST_DAILY	= "last_daily";
 	public static final String KEY_INTRO		= "intro";
+	public static final String KEY_CHECKPOINTS	= "checkpoints";
 
 	public static final String KEY_SUPPORT_NAGGED= "support_nagged";
 	public static final String KEY_VICTORY_NAGGED= "victory_nagged";
@@ -244,6 +245,14 @@ public class SPDSettings extends GameSettings {
 		return getInt( KEY_LAST_CLASS, 0, 0, 3 );
 	}
 	
+	public static void checkpoints( boolean value ) {
+		put( KEY_CHECKPOINTS, value );
+	}
+
+	public static boolean checkpoints() {
+		return getBoolean( KEY_CHECKPOINTS, false );
+	}
+
 	public static void challenges( int value ) {
 		put( KEY_CHALLENGES, value );
 	}

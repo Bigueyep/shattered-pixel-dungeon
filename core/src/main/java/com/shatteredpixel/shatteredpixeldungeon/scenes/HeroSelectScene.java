@@ -823,6 +823,28 @@ public class HeroSelectScene extends PixelScene {
 			add(challengeButton);
 			buttons.add(challengeButton);
 
+			//optional checkpoint mode, chosen per run when the hero is created
+			StyledButton checkpointButton = new StyledButton(Chrome.Type.BLANK, checkpointLabel(), 6){
+				@Override
+				protected void onClick() {
+					SPDSettings.checkpoints(!SPDSettings.checkpoints());
+					text(checkpointLabel());
+					icon(Icons.get(SPDSettings.checkpoints() ? Icons.CHECKED : Icons.UNCHECKED));
+					GameOptions.this.layout();
+					if (SPDSettings.checkpoints()){
+						ShatteredPixelDungeon.scene().addToFront( new WndTitledMessage(
+								Icons.get(Icons.CHECKED),
+								Messages.get(HeroSelectScene.class, "checkpoints_title"),
+								Messages.get(HeroSelectScene.class, "checkpoints_desc"))
+						);
+					}
+				}
+			};
+			checkpointButton.leftJustify = true;
+			checkpointButton.icon(Icons.get(SPDSettings.checkpoints() ? Icons.CHECKED : Icons.UNCHECKED));
+			add(checkpointButton);
+			buttons.add(checkpointButton);
+
 			int unlockedCount = 0;
 			for (HeroClass cls : HeroClass.values()){
 				if (cls.isUnlocked()) unlockedCount++;
@@ -857,6 +879,10 @@ public class HeroSelectScene extends PixelScene {
 				add(spc);
 				spacers.add(spc);
 			}
+		}
+
+		private String checkpointLabel(){
+			return Messages.get(HeroSelectScene.class, SPDSettings.checkpoints() ? "checkpoints_on" : "checkpoints_off");
 		}
 
 		private class WndRandomize extends Window {

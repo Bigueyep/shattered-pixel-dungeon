@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Chrome;
+import com.shatteredpixel.shatteredpixeldungeon.Checkpoint;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.Rankings;
@@ -659,17 +660,9 @@ public class GameScene extends PixelScene {
 				GLog.h(Messages.get(this, "return"), Dungeon.depth);
 			}
 
-			//glass memory: reveals the layout around the arrival point on new floors
-			if (Dungeon.hero.hasTalent(Talent.GLASS_MEMORY)
-					&& Dungeon.depth == Statistics.deepestFloor
-					&& (InterlevelScene.mode == InterlevelScene.Mode.DESCEND || InterlevelScene.mode == InterlevelScene.Mode.FALL)){
-				int radius = 2 + 3*Dungeon.hero.pointsInTalent(Talent.GLASS_MEMORY);
-				for (int i = 0; i < Dungeon.level.length(); i++){
-					if (Dungeon.level.discoverable[i] && Dungeon.level.distance(i, Dungeon.hero.pos) <= radius){
-						Dungeon.level.mapped[i] = true;
-					}
-				}
-				GameScene.updateFog();
+			if (Checkpoint.justSaved){
+				Checkpoint.justSaved = false;
+				GLog.p(Messages.get(Checkpoint.class, "saved"));
 			}
 
 			if (Dungeon.hero.hasTalent(Talent.ROGUES_FORESIGHT)
@@ -1574,11 +1567,40 @@ public class GameScene extends PixelScene {
 		gameOver.show( 0x000000, 2f );
 		scene.showBanner( gameOver );
 
+		//in checkpoint mode the save has been rolled back, so the run can be resumed from there
+		StyledButton checkpointBtn = null;
+		if (Checkpoint.enabled() && Checkpoint.exists(GamesInProgress.curSlot)){
+			checkpointBtn = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(Checkpoint.class, "resume", Dungeon.checkpointDepth), 9){
+				@Override
+				protected void onClick() {
+					//the dead hero's buff actions must not stay usable in the resumed run
+					ActionIndicator.clearAction();
+					InterlevelScene.mode = InterlevelScene.Mode.CONTINUE;
+					ShatteredPixelDungeon.switchScene(InterlevelScene.class);
+				}
+
+				@Override
+				public void update() {
+					alpha((float)Math.pow(gameOver.am, 2));
+					super.update();
+				}
+			};
+			checkpointBtn.icon(Icons.get(Icons.REPEAT));
+			checkpointBtn.alpha(0);
+			checkpointBtn.camera = uiCamera;
+		}
+
 		StyledButton restart = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(StartScene.class, "new"), 9){
 			@Override
 			protected void onClick() {
+				//a checkpoint run keeps its slot after death, so every slot may be in use
+				int slot = GamesInProgress.firstEmpty();
+				if (slot == -1){
+					ShatteredPixelDungeon.switchScene(StartScene.class);
+					return;
+				}
 				GamesInProgress.selectedClass = Dungeon.hero.heroClass;
-				GamesInProgress.curSlot = GamesInProgress.firstEmpty();
+				GamesInProgress.curSlot = slot;
 				ShatteredPixelDungeon.switchScene(HeroSelectScene.class);
 			}
 
@@ -1620,6 +1642,53 @@ public class GameScene extends PixelScene {
 				restart.bottom() + 2
 		);
 		scene.add(menu);
+
+		if (checkpointBtn != null){
+			checkpointBtn.setSize(Math.max(80, checkpointBtn.reqWidth()), 20);
+			checkpointBtn.setPos(
+					align(uiCamera, (checkpointBtn.camera.width - checkpointBtn.width()) / 2),
+					menu.bottom() + 2
+			);
+			scene.add(checkpointBtn);
+
+			//a checkpoint run can also be given up, which ranks it like a normal death and frees the slot
+			final StyledButton resumeBtn = checkpointBtn;
+			StyledButton abandonBtn = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(Checkpoint.class, "abandon"), 9){
+				@Override
+				protected void onClick() {
+					final StyledButton self = this;
+					GameScene.show(new WndOptions(Icons.get(Icons.WARNING),
+							Messages.get(Checkpoint.class, "abandon_title"),
+							Messages.get(Checkpoint.class, "abandon_body"),
+							Messages.get(Checkpoint.class, "abandon_yes"),
+							Messages.get(Checkpoint.class, "abandon_no")){
+						@Override
+						protected void onSelect(int index) {
+							if (index == 0){
+								Checkpoint.abandon(GamesInProgress.curSlot);
+								resumeBtn.visible = resumeBtn.active = false;
+								self.visible = self.active = false;
+							}
+						}
+					});
+				}
+
+				@Override
+				public void update() {
+					alpha((float)Math.pow(gameOver.am, 2));
+					super.update();
+				}
+			};
+			abandonBtn.icon(Icons.get(Icons.CLOSE));
+			abandonBtn.alpha(0);
+			abandonBtn.camera = uiCamera;
+			abandonBtn.setSize(Math.max(80, abandonBtn.reqWidth()), 20);
+			abandonBtn.setPos(
+					align(uiCamera, (abandonBtn.camera.width - abandonBtn.width()) / 2),
+					checkpointBtn.bottom() + 2
+			);
+			scene.add(abandonBtn);
+		}
 	}
 	
 	public static void bossSlain() {

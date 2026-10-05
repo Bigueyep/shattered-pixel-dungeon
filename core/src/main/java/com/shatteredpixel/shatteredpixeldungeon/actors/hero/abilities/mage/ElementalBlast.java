@@ -65,8 +65,10 @@ import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLightning;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLivingEarth;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfMagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfPrismaticLight;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfRegrowth;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfTransfusion;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfTranslocation;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfWarding;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
@@ -104,6 +106,7 @@ public class ElementalBlast extends ArmorAbility {
 		effectTypes.put(WandOfTransfusion.class,    MagicMissile.BLOOD_CONE);
 		effectTypes.put(WandOfCorruption.class,     MagicMissile.SHADOW_CONE);
 		effectTypes.put(WandOfRegrowth.class,       MagicMissile.FOLIAGE_CONE);
+		effectTypes.put(WandOfTranslocation.class,  MagicMissile.MAGIC_MISS_CONE);
 	}
 
 	private static final HashMap<Class<?extends Wand>, Float> damageFactors = new HashMap<>();
@@ -121,6 +124,7 @@ public class ElementalBlast extends ArmorAbility {
 		damageFactors.put(WandOfTransfusion.class,      0f);
 		damageFactors.put(WandOfCorruption.class,       0f);
 		damageFactors.put(WandOfRegrowth.class,         0f);
+		damageFactors.put(WandOfTranslocation.class,    0f);
 	}
 
 	{
@@ -316,6 +320,15 @@ public class ElementalBlast extends ArmorAbility {
 								} else if (finalWandCls == WandOfFrost.class){
 									if (mob.isAlive() && mob.alignment != Char.Alignment.ALLY) {
 										Buff.affect( mob, Frost.class, effectMulti*Frost.DURATION );
+									}
+
+								//*** Wand of Translocation ***
+								} else if (finalWandCls == WandOfTranslocation.class){
+									if (mob.isAlive() && mob.alignment == Char.Alignment.ENEMY
+											&& !Char.hasProp(mob, Char.Property.BOSS)
+											&& !Char.hasProp(mob, Char.Property.MINIBOSS)
+											&& !Char.hasProp(mob, Char.Property.IMMOVABLE)) {
+										if (ScrollOfTeleportation.teleportChar( mob )) charsHit++;
 									}
 
 								//*** Wand of Prismatic Light ***

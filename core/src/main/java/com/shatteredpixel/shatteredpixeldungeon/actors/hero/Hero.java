@@ -23,6 +23,7 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.hero;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
+import com.shatteredpixel.shatteredpixeldungeon.Checkpoint;
 import com.shatteredpixel.shatteredpixeldungeon.Bones;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
@@ -49,6 +50,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Brute;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DM100;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Golem;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CrackedMirror;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfVengeance;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMirrorImage;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLightning;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Shocking;
@@ -1817,6 +1819,7 @@ public class Hero extends Char {
 			//reflects a portion of melee damage actually taken (after armor and shielding)
 			MirrorCracks.onMeleeHitTaken(this, (Char) src, effectiveDamage);
 		}
+		RingOfVengeance.onDamageTaken(this, effectiveDamage);
 		if (src instanceof Char && heroClass == HeroClass.MIRRORSHADE){
 			MirrorCracks.gain(this, crushingBlow ? 2 : 1);
 		}
@@ -2393,31 +2396,16 @@ public class Hero extends Char {
 	}
 	
 	public static void reallyDie( Object cause ) {
+
+		//in checkpoint mode the run continues from the last checkpoint instead of ending
+		boolean toCheckpoint = Checkpoint.enabled() && Checkpoint.exists(GamesInProgress.curSlot);
 		
-		int length = Dungeon.level.length();
-		int[] map = Dungeon.level.map;
-		boolean[] visited = Dungeon.level.visited;
-		boolean[] discoverable = Dungeon.level.discoverable;
-		
-		for (int i=0; i < length; i++) {
-			
-			int terr = map[i];
-			
-			if (discoverable[i]) {
-				
-				visited[i] = true;
-				if ((Terrain.flags[terr] & Terrain.SECRET) != 0) {
-					Dungeon.level.discover( i );
-				}
-			}
-		}
-		
-		Bones.leave();
+		//a rolled back death must not reveal the floor, leave bones or identify items for the resumed run,
+		// these happen later in Checkpoint.abandon if the player gives up the run instead
+		if (!toCheckpoint) revealOnDeath();
 		
 		Dungeon.observe();
 		GameScene.updateFog();
-				
-		Dungeon.hero.belongings.identify();
 
 		int pos = Dungeon.hero.pos;
 
@@ -2459,7 +2447,34 @@ public class Hero extends Char {
 			((Hero.Doom)cause).onDeath();
 		}
 
-		Dungeon.deleteGame( GamesInProgress.curSlot, true );
+		if (!toCheckpoint || !Checkpoint.restore( GamesInProgress.curSlot )){
+			Dungeon.deleteGame( GamesInProgress.curSlot, true );
+		}
+	}
+
+	//reveals the floor's layout and secrets, leaves bones and identifies the hero's items
+	public static void revealOnDeath(){
+		int length = Dungeon.level.length();
+		int[] map = Dungeon.level.map;
+		boolean[] visited = Dungeon.level.visited;
+		boolean[] discoverable = Dungeon.level.discoverable;
+		
+		for (int i=0; i < length; i++) {
+			
+			int terr = map[i];
+			
+			if (discoverable[i]) {
+				
+				visited[i] = true;
+				if ((Terrain.flags[terr] & Terrain.SECRET) != 0) {
+					Dungeon.level.discover( i );
+				}
+			}
+		}
+		
+		Bones.leave();
+		
+		Dungeon.hero.belongings.identify();
 	}
 
 	//effectively cache this buff to prevent having to call buff(...) a bunch.
