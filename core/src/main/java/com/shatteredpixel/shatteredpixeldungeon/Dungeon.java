@@ -293,6 +293,10 @@ public class Dungeon {
 		Badges.reset();
 		
 		GamesInProgress.selectedClass.initHero( hero );
+
+		if (Loadout.enabled()){
+			Loadout.apply( hero );
+		}
 	}
 
 	public static boolean isChallenged( int mask ) {

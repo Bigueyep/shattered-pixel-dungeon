@@ -46,6 +46,7 @@ import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndChallenges;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndHeroInfo;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndKeyBindings;
+import com.shatteredpixel.shatteredpixeldungeon.windows.WndLoadout;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndMessage;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndOptions;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndTextInput;
@@ -62,6 +63,7 @@ import com.watabou.noosa.PointerArea;
 import com.watabou.noosa.SkinnedBlock;
 import com.watabou.noosa.tweeners.Tweener;
 import com.watabou.noosa.ui.Component;
+import com.watabou.utils.Callback;
 import com.watabou.utils.DeviceCompat;
 import com.watabou.utils.GameMath;
 import com.watabou.utils.PlatformSupport;
@@ -845,6 +847,25 @@ public class HeroSelectScene extends PixelScene {
 			add(checkpointButton);
 			buttons.add(checkpointButton);
 
+			//optional arsenal mode: a +10 weapon and a relic from the start, it combines with checkpoints
+			loadoutButton = new StyledButton(Chrome.Type.BLANK, loadoutLabel(), 6){
+				@Override
+				protected void onClick() {
+					ShatteredPixelDungeon.scene().addToFront( new WndLoadout( new Callback() {
+						@Override
+						public void call() {
+							loadoutButton.text(loadoutLabel());
+							loadoutButton.icon(Icons.get(SPDSettings.loadout() ? Icons.CHECKED : Icons.UNCHECKED));
+							GameOptions.this.layout();
+						}
+					}));
+				}
+			};
+			loadoutButton.leftJustify = true;
+			loadoutButton.icon(Icons.get(SPDSettings.loadout() ? Icons.CHECKED : Icons.UNCHECKED));
+			add(loadoutButton);
+			buttons.add(loadoutButton);
+
 			int unlockedCount = 0;
 			for (HeroClass cls : HeroClass.values()){
 				if (cls.isUnlocked()) unlockedCount++;
@@ -879,6 +900,12 @@ public class HeroSelectScene extends PixelScene {
 				add(spc);
 				spacers.add(spc);
 			}
+		}
+
+		private StyledButton loadoutButton;
+
+		private String loadoutLabel(){
+			return Messages.get(HeroSelectScene.class, SPDSettings.loadout() ? "loadout_on" : "loadout_off");
 		}
 
 		private String checkpointLabel(){
