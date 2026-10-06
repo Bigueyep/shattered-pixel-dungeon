@@ -1741,7 +1741,16 @@ public class Hero extends Char {
 	}
 
 	@Override
+	public boolean isInvulnerable( Class effect ) {
+		return SPDSettings.godMode() || super.isInvulnerable( effect );
+	}
+
+	@Override
 	public void damage( int dmg, Object src ) {
+		//god mode: nothing can hurt the hero
+		if (SPDSettings.godMode()) {
+			return;
+		}
 		if (buff(TimekeepersHourglass.timeStasis.class) != null
 				|| buff(TimeStasis.class) != null) {
 			return;

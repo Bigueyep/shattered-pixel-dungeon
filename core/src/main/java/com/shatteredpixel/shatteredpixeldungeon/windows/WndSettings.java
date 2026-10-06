@@ -368,6 +368,8 @@ public class WndSettings extends WndTabbed {
 		ColorBlock sep2;
 		CheckBox chkFont;
 		CheckBox chkVibrate;
+		ColorBlock sep3;
+		CheckBox chkGodMode;
 
 		@Override
 		protected void createChildren() {
@@ -601,6 +603,20 @@ public class WndSettings extends WndTabbed {
 				chkVibrate.checked(SPDSettings.vibration());
 			}
 			add(chkVibrate);
+
+			//cheat, takes effect immediately, including in a run in progress
+			sep3 = new ColorBlock(1, 1, 0xFF000000);
+			add(sep3);
+
+			chkGodMode = new CheckBox(Messages.get(this, "god_mode")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					SPDSettings.godMode(checked());
+				}
+			};
+			chkGodMode.checked(SPDSettings.godMode());
+			add(chkGodMode);
 		}
 
 		@Override
@@ -648,6 +664,11 @@ public class WndSettings extends WndTabbed {
 				chkVibrate.setRect(0, chkFont.bottom() + GAP, width, BTN_HEIGHT);
 				height = chkVibrate.bottom();
 			}
+
+			sep3.size(width, 1);
+			sep3.y = height + GAP;
+			chkGodMode.setRect(0, sep3.y + 1 + GAP, width, BTN_HEIGHT);
+			height = chkGodMode.bottom();
 		}
 
 	}

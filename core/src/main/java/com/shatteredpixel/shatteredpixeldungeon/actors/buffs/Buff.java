@@ -21,6 +21,8 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
+import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -67,6 +69,11 @@ public class Buff extends Actor {
 	public boolean attachTo( Char target ) {
 
 		if (target.isImmune( getClass() )) {
+			return false;
+		}
+
+		//god mode: no harmful effect can be put on the hero
+		if (type == buffType.NEGATIVE && target == Dungeon.hero && SPDSettings.godMode()) {
 			return false;
 		}
 		

@@ -224,6 +224,7 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_LAST_DAILY	= "last_daily";
 	public static final String KEY_INTRO		= "intro";
 	public static final String KEY_CHECKPOINTS	= "checkpoints";
+	public static final String KEY_GOD_MODE		= "god_mode";
 	public static final String KEY_LOADOUT		= "loadout";
 	public static final String KEY_LOADOUT_WEAPON	= "loadout_weapon";
 	public static final String KEY_LOADOUT_RELIC	= "loadout_relic";
@@ -254,6 +255,15 @@ public class SPDSettings extends GameSettings {
 
 	public static boolean checkpoints() {
 		return getBoolean( KEY_CHECKPOINTS, false );
+	}
+
+	//cheat: the hero can't be hurt and kills every enemy in one hit, see Char.damage
+	public static void godMode( boolean value ) {
+		put( KEY_GOD_MODE, value );
+	}
+
+	public static boolean godMode() {
+		return getBoolean( KEY_GOD_MODE, false );
 	}
 
 	public static void loadout( boolean value ) {

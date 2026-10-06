@@ -24,6 +24,7 @@ package com.shatteredpixel.shatteredpixeldungeon.actors;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Electricity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.StormCloud;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
@@ -622,6 +623,11 @@ public abstract class Char extends Actor {
 	}
 
 	public static boolean hit( Char attacker, Char defender, float accMulti, boolean magic ) {
+		//god mode: the hero never misses an enemy
+		if (attacker == Dungeon.hero && defender.alignment == Alignment.ENEMY && SPDSettings.godMode()){
+			return true;
+		}
+
 		float acuStat = attacker.attackSkill( defender );
 		float defStat;
 		rollingDefense = true;
@@ -837,6 +843,15 @@ public abstract class Char extends Actor {
 	public void damage( int dmg, Object src ) {
 		
 		if (!isAlive() || dmg < 0) {
+			return;
+		}
+
+		//god mode: anything that hurts an enemy of the hero kills it outright,
+		// shields, resistances, invulnerability and boss phases included
+		if (dmg > 0 && alignment == Alignment.ENEMY && this != Dungeon.hero
+				&& Dungeon.hero != null && SPDSettings.godMode()){
+			HP = 0;
+			die(src);
 			return;
 		}
 
